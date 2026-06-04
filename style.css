@@ -1,0 +1,74 @@
+body {
+    font-family: sans-serif;
+    padding: 20px;
+}
+
+#board {
+    display: grid;
+    gap: 4px;
+    margin-top: 20px;
+}
+
+.cell {
+    width: 70px;
+    height: 70px;
+
+    border: 1px solid #999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 32px;
+    font-weight: bold;
+
+    user-select: none;
+}
+
+.cell.selected {
+    background: #ddd;
+}
+
+#current-word {
+    margin-top: 20px;
+    font-size: 28px;
+    min-height: 40px;
+}
+
+#found-words {
+    margin-top: 30px;
+}
+
+.cell {
+    position: relative;
+}
+
+.number {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.cell.selected {
+    background: #ddd;
+}
+
+#found-words {
+    margin-top: 30px;
+
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+#found-words div {
+
+    padding: 4px 8px;
+
+    border: 1px solid #999;
+
+    border-radius: 6px;
+}
