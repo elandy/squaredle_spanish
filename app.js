@@ -15,6 +15,12 @@ async function loadPuzzle() {
     const solutionResponse =
         await fetch("daily_solution.json");
     solution = await solutionResponse.json();
+    solution.wordMap = Object.fromEntries(
+        solution.words.map(w => [
+            w.normalized,
+            w.display
+        ])
+    );
     renderBoard();
     console.log(solution);
 }
@@ -56,9 +62,9 @@ function renderBoard() {
                 "pointerdown",
                 startSelection
             );
-            cell.addEventListener(
-                "pointerenter",
-                extendSelection
+            board.addEventListener(
+                "pointermove",
+                handlePointerMove
             );
             board.appendChild(cell);
         }
@@ -71,6 +77,42 @@ function renderBoard() {
 
     document.getElementById("progress").textContent =
         `0 / ${puzzle.word_count}`;
+}
+
+function handlePointerMove(event) {
+    if (!dragging) return;
+    const element =
+        document.elementFromPoint(
+            event.clientX,
+            event.clientY
+        );
+    const cell =
+        element?.closest(".cell");
+    if (!cell) return;
+    if (
+        !cursorNearCenter(
+            cell,
+            event.clientX,
+            event.clientY
+        )
+    ) {
+        return;
+    }
+    addCell(cell);
+}
+
+function cursorNearCenter(cell, x, y) {
+    const rect =
+        cell.getBoundingClientRect();
+    const centerX =
+        rect.left + rect.width / 2;
+    const centerY =
+        rect.top + rect.height / 2;
+    const dx = x - centerX;
+    const dy = y - centerY;
+    const distance =
+        Math.sqrt(dx * dx + dy * dy);
+    return distance < rect.width * 0.35;
 }
 
 function isAdjacent(cellA, cellB) {
@@ -127,12 +169,9 @@ function updateProgress() {
 
 function checkWord(word) {
     console.log("checking:", word);
-    console.log(
-        "exists:",
-        solution.words.includes(word)
-    );
+    console.log("exists:", solution.wordMap[word]);
 
-    if (!solution.words.includes(word)) {
+    if (!solution.wordMap[word]) {
         console.log("invalid");
         clearSelection();
         return;
@@ -142,7 +181,7 @@ function checkWord(word) {
         clearSelection();
         return;
     }
-    foundWords.add(word);
+    foundWords.add(solution.wordMap[word]);
     renderFoundWords();
     updateProgress();
     console.log("valid");
@@ -162,8 +201,35 @@ function finishSelection() {
 
 function addCell(cell) {
 
-    if (selectedCells.includes(cell))
+    const existingIndex =
+        selectedCells.indexOf(cell);
+
+    if (existingIndex !== -1) {
+
+        if (
+            existingIndex ===
+            selectedCells.length - 2
+        ) {
+
+            const removed =
+                selectedCells.pop();
+
+            removed.classList.remove(
+                "selected"
+            );
+
+            currentWord =
+                currentWord.slice(0, -1);
+
+            updateSelectionNumbers();
+
+            document.getElementById(
+                "current-word"
+            ).textContent = currentWord;
+        }
+
         return;
+    }
 
     if (selectedCells.length > 0) {
         const previous =

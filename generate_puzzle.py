@@ -6,8 +6,23 @@ import unicodedata
 from collections import Counter
 from statistics import mean
 
-from wordfreq import zipf_frequency
+import argparse
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    "--board",
+    type=str,
+)
+
+args = parser.parse_args()
+
+def parse_board(text):
+    rows = text.split("/")
+    return [
+        [normalize(c) for c in row]
+        for row in rows
+    ]
 
 # ==========================================
 # CONFIG
@@ -17,7 +32,7 @@ SIZE = 4
 
 MIN_WORDS = 40
 MAX_WORDS = 85
-
+FREQUENCY_FILTER = 3.0
 LETTERS = (
     "EEEEEEEEEEEE"
     "AAAAAAAAAAA"
@@ -44,25 +59,28 @@ LETTERS = (
     "Ñ"
 )
 
-
 # ==========================================
 # NORMALIZATION
 # ==========================================
 
 def normalize(word):
-    word = unicodedata.normalize("NFD", word)
+    word = word.upper()
 
-    result = []
+    out = []
 
     for c in word:
-        if c == "ñ":
-            result.append("Ñ")
-        elif c == "Ñ":
-            result.append("Ñ")
-        elif unicodedata.category(c) != "Mn":
-            result.append(c)
+        if c in ("Ñ",):
+            out.append("Ñ")
+            continue
 
-    return "".join(result).upper()
+        decomposed = unicodedata.normalize("NFKD", c)
+
+        for d in decomposed:
+            if unicodedata.category(d) == "Mn":
+                continue
+            out.append(d)
+
+    return "".join(out)
 
 
 # ==========================================
@@ -79,14 +97,16 @@ class Trie:
     def __init__(self):
         self.root = TrieNode()
 
-    def insert(self, word):
-
+    def insert(self, normalized_word, display_word):
         node = self.root
 
-        for ch in word:
+        for ch in normalized_word:
             node = node.children.setdefault(ch, TrieNode())
 
-        node.word = word
+        node.word = {
+            "display": display_word,
+            "normalized": normalized_word,
+        }
 
 
 # ==========================================
@@ -98,23 +118,14 @@ print("Loading dictionary...")
 trie = Trie()
 loaded_words = []
 
-with open("Spanish.txt", encoding="utf-8") as f:
-
+with open("Spanish.txt", encoding="utf-16") as f:
     for line in f:
-
-        word = normalize(line.strip())
-
-        if len(word) < 4:
-            continue
-
-        if zipf_frequency(word.lower(), "es") < 2.5:
-            continue
-
-        trie.insert(word)
-        loaded_words.append(word)
+        original = line.strip()
+        normalized = normalize(original)
+        trie.insert(normalized, original.upper())
+        loaded_words.append(original)
 
 print(f"Loaded {len(loaded_words):,} words")
-
 
 # ==========================================
 # BOARD GENERATION
@@ -150,9 +161,14 @@ def search(board, trie):
         current += letter
         visited.add((x, y))
         path.append((x, y))
-        if node.word:  # Keep first path found
-            if node.word not in found:
-                found[node.word] = path.copy()
+        if node.word:
+            key = node.word["normalized"]
+            if key not in found:
+                found[key] = {
+                    "display": node.word["display"],
+                    "normalized": node.word["normalized"],
+                    "path": path.copy(),
+                }
 
         for dx, dy in DIRECTIONS:
             nx = x + dx
@@ -197,31 +213,62 @@ def analyze(words):
 # ==========================================
 
 attempts = 0
+valid_board = False
 
 print(f"\nSearching for puzzle with between {MIN_WORDS} and {MAX_WORDS} words...\n")
 
-while True:
+if args.board:
+    board = parse_board(args.board)
 
-    attempts += 1
-
-    board = generate_board()
+    if len(board) != SIZE or any(len(row) != SIZE for row in board):
+        print(f"Board must be {SIZE}x{SIZE}")
+        raise SystemExit(1)
 
     solutions = search(board, trie)
     words = set(solutions.keys())
 
-    if attempts % 100 == 0:
-        print(
-            f"Attempt {attempts:,} | "
-            f"best current board: {len(words)} words"
-        )
+    used_tiles = set()
+    for data in solutions.values():
+        used_tiles.update(data["path"])
 
-    if MAX_WORDS >= len(words) >= MIN_WORDS:
-        break
+    if len(used_tiles) != SIZE * SIZE:
+        unused = []
+        for r in range(SIZE):
+            for c in range(SIZE):
+                if (r, c) not in used_tiles:
+                    unused.append(f"{board[r][c]} ({r},{c})")
+        print("\nINVALID BOARD. Unused tiles:", ", ".join(unused))
+        raise SystemExit(1)
+    if len(words) > MAX_WORDS:
+        print(f"\nINVALID BOARD\n{len(words)} words (maximum is {MAX_WORDS})")
+        raise SystemExit(1)
 
+    valid_board = True
 
+    print(f"\nVALID BOARD ({len(words)} words)")
+else:
+    while True:
+        attempts += 1
+        board = generate_board()
+        solutions = search(board, trie)
+        words = set(solutions.keys())
+        used_tiles = set()
+        for data in solutions.values():
+            used_tiles.update(data["path"])
+
+        if attempts % 100 == 0:
+            print(f"Attempt {attempts:,} | best current board: {len(words)} words")
+        if (
+            MIN_WORDS <= len(words) <= MAX_WORDS
+            and len(used_tiles) == SIZE * SIZE
+        ):
+            valid_board = True
+            break
 # ==========================================
 # RESULTS
 # ==========================================
+if not valid_board:
+    raise SystemExit(1)
 
 stats = analyze(words)
 
@@ -265,10 +312,22 @@ daily_solution = {
     "size": SIZE,
     "board": board,
     "word_count": len(words),
-    "words": sorted(words),
+    "words": sorted(
+        [
+            {
+                "display": data["display"],
+                "normalized": data["normalized"]
+            }
+            for data in solutions.values()
+        ],
+        key=lambda w: w["normalized"]
+    ),
     "paths": {
-        word: [[r,c] for r,c in path]
-        for word, path in solutions.items()
+        normalized: [
+            [r, c]
+            for r, c in data["path"]
+        ]
+        for normalized, data in solutions.items()
     },
     "stats": {
         "word_count": len(words),
