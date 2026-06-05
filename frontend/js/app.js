@@ -22,12 +22,17 @@ let dragging = false;
 async function init() {
     puzzle = await getTodayPuzzle();
 
-    sessionId = localStorage.getItem("session_id");
+    const savedSession  = localStorage.getItem("session_id");
+    const savedPuzzle = localStorage.getItem("session_puzzle_id");
 
-    if (!sessionId) {
+    if (!savedSession || savedPuzzle !== puzzle.id) {
         const session = await createSession(puzzle.id);
         sessionId = session.session_id;
         localStorage.setItem("session_id", sessionId);
+        localStorage.setItem("session_puzzle_id", puzzle.id);
+    }
+    else {
+        sessionId = savedSession;
     }
 
     await loadProgress();
@@ -42,7 +47,7 @@ async function init() {
 async function loadProgress() {
     const progress = await getProgress(sessionId);
 
-    foundWords = new Set(progress.words || []);
+    foundWords = new Set(progress.display_words || []);
 
     updateProgress();
     renderFoundWords();
@@ -200,7 +205,7 @@ async function submitCurrentWord() {
 
     if (!result.success) return;
 
-    foundWords.add(result.word);
+    foundWords.add(result.display);
 
     renderFoundWords();
     updateProgress();

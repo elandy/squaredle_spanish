@@ -137,9 +137,11 @@ class PuzzleService:
                 session.found_count * 100 / len(valid_words),
                 2
             )
+            display_word = next((w["display"] for w in puzzle.solution_json["words"] if w["normalized"] == word), None)
             return {
                 "success": True,
-                "word": word,
+                "normalized": word,
+                "display": display_word,
                 "score_added": score_added,
                 "total_score": session.score,
                 "found_count": session.found_count,
@@ -175,24 +177,21 @@ class PuzzleService:
                 )
                 .all()
             )
-
-            found_count = len(found_words)
-            total_words = puzzle.puzzle_json["word_count"]
-            score = sum(len(word.word) - 3 for word in found_words)
-
+            solution_map = {
+                w["normalized"]: w["display"]
+                for w in puzzle.solution_json["words"]
+            }
+            normalized_words = [w.word for w in found_words]
+            display_words = [solution_map[w] for w in normalized_words if w in solution_map]
             return {
                 "session_id": session.id,
                 "puzzle_id": session.puzzle_id,
-                "found_words": found_count,
-                "total_words": total_words,
-                "score": score,
-                "completed": (
-                    found_count == total_words
-                ),
-                "words": [
-                    w.word
-                    for w in found_words
-                ]
+                "found_words": len(found_words),
+                "total_words": puzzle.puzzle_json["word_count"],
+                "score": sum(len(w.word) - 3 for w in found_words),
+                "completed": len(found_words) == puzzle.puzzle_json["word_count"],
+                "words": normalized_words,
+                "display_words": display_words
             }
 
     def get_found_words(self, session_id):

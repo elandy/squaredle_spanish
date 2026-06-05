@@ -7,7 +7,7 @@ from statistics import mean
 
 import argparse
 
-from utils.normalize import normalize
+from src.utils.normalize import normalize
 
 parser = argparse.ArgumentParser()
 
