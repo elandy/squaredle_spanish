@@ -174,10 +174,6 @@ function cursorNearCenter(cell, x, y) {
     return Math.sqrt(dx * dx + dy * dy) < rect.width * 0.35;
 }
 
-// ==========================================================
-// SELECTION LOGIC (RESTORED BACKTRACKING)
-// ==========================================================
-
 function startSelection(event) {
     clearSelection();
     dragging = true;
@@ -201,6 +197,7 @@ function addCell(cell) {
 
             currentWord = currentWord.slice(0, -1);
             updateCurrentWord();
+            playLetterSound(selectedCells.length);
         }
         return;
     }
@@ -241,12 +238,12 @@ function finishSelection() {
 function clearSelection() {
     selectedCells.forEach(c => c.classList.remove("selected"));
     selectedCells = [];
-    currentWord = "";
-    updateCurrentWord();
 }
 
 function updateCurrentWord() {
-    document.getElementById("current-word").textContent = currentWord;
+    const el = document.getElementById("current-word");
+    el.textContent = currentWord;
+    el.classList.remove("valid", "invalid");
 }
 
 // ==========================================================
@@ -261,12 +258,17 @@ async function submitCurrentWord() {
     // invalid word
     if (!displayWord) {
         playBuffer(wrongBuffer);
+        spawnWordAnimation(currentWord, "wrong");
+        currentWord = "";
+        updateCurrentWord();
         return;
     }
 
     // already found
     if (normalizedFoundWords.has(currentWord)) {
-        playBuffer(wrongBuffer);
+        spawnWordAnimation(currentWord, "wrong");
+        currentWord = "";
+        updateCurrentWord();
         return;
     }
 
@@ -276,14 +278,17 @@ async function submitCurrentWord() {
 
     renderFoundWords();
     updateProgress();
+    spawnWordAnimation(displayWord, "correct");
 
     playBuffer(correctBuffer);
-
     // fire-and-forget server update
     submitWord(sessionId, puzzle.id, currentWord)
         .catch(error => {
             console.error("submit failed", error);
         });
+
+    currentWord = "";
+    updateCurrentWord();
 }
 
 // ==========================================================
@@ -294,18 +299,80 @@ function renderFoundWords() {
     const container = document.getElementById("found-words");
     container.innerHTML = "";
 
-    [...foundWords]
-        .sort()
-        .forEach(w => {
-            const div = document.createElement("div");
-            div.textContent = w;
-            container.appendChild(div);
+    // Build full solution groups
+    const groups = {};
+
+    for (const w of puzzle.words) {
+        const len = w.display.length;
+
+        if (!groups[len]) {
+            groups[len] = {
+                total: [],
+                found: []
+            };
+        }
+
+        groups[len].total.push(w.display);
+
+        if (foundWords.has(w.display)) {
+            groups[len].found.push(w.display);
+        }
+    }
+
+    Object.keys(groups)
+        .map(Number)
+        .sort((a, b) => a - b)
+        .forEach(len => {
+            const group = groups[len];
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "word-group";
+
+            const title = document.createElement("div");
+            title.className = "word-group-title";
+            title.textContent =
+                `${len} letters (+${group.total.length - group.found.length} words left)`;
+
+            const wordsWrap = document.createElement("div");
+            wordsWrap.className = "word-group-words";
+
+            group.found
+                .sort()
+                .forEach(word => {
+                    const chip = document.createElement("div");
+                    chip.className = "word-chip found";
+                    chip.textContent = word;
+                    wordsWrap.appendChild(chip);
+                });
+
+            wrapper.appendChild(title);
+            wrapper.appendChild(wordsWrap);
+            container.appendChild(wrapper);
         });
 }
 
 function updateProgress() {
     document.getElementById("progress").textContent =
         `${normalizedFoundWords.size} / ${puzzle.word_count}`;
+}
+
+function spawnWordAnimation(text, type) {
+    const el = document.createElement("div");
+
+    el.textContent = text;
+    el.className = `floating-word ${type}`;
+
+    document.body.appendChild(el);
+    void el.offsetWidth;
+
+    // trigger animation
+    requestAnimationFrame(() => {
+        el.classList.add("active");
+    });
+
+    el.addEventListener("animationend", () => {
+        el.remove();
+    });
 }
 
 // ==========================================================
