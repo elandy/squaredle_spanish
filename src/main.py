@@ -1,8 +1,11 @@
+import os
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from src.services.puzzle_service import PuzzleService
 from fastapi.middleware.cors import CORSMiddleware
+import httpx
+from fastapi import Query
 
 from src.utils.normalize import normalize
 
@@ -16,9 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 service = PuzzleService()
-
 
 # ==========================================================
 # MODELS
@@ -31,12 +32,10 @@ class SubmitWordRequest(BaseModel):
 class CreateSessionRequest(BaseModel):
     puzzle_id: str
 
-
 class SessionResponse(BaseModel):
     session_id: str
     puzzle_id: str
     created_at: datetime
-
 
 # ==========================================================
 # HEALTH
@@ -45,7 +44,6 @@ class SessionResponse(BaseModel):
 @app.get("/health")
 async def health():
     return {"status": "ok"}
-
 
 # ==========================================================
 # PUZZLES
@@ -64,7 +62,6 @@ async def get_today_puzzle():
 
     return puzzle
 
-
 @app.get("/puzzle/{puzzle_id}")
 async def get_puzzle(puzzle_id: str):
 
@@ -74,7 +71,6 @@ async def get_puzzle(puzzle_id: str):
         raise HTTPException(404, "Puzzle not found")
 
     return puzzle
-
 
 # ==========================================================
 # SESSION
@@ -93,7 +89,6 @@ async def create_session(request: CreateSessionRequest):
         created_at=datetime.now()
     )
 
-
 @app.get("/session/{session_id}")
 async def get_session(session_id: str):
 
@@ -103,7 +98,6 @@ async def get_session(session_id: str):
         raise HTTPException(404, "Session not found")
 
     return session
-
 
 # ==========================================================
 # GAMEPLAY
@@ -136,10 +130,48 @@ async def leaderboard_today():
 
     return service.get_today_leaderboard()
 
-
 @app.get("/leaderboard/{puzzle_id}")
 async def leaderboard(puzzle_id: str):
 
     return service.get_leaderboard(
         puzzle_id=puzzle_id
     )
+
+# ==========================================================
+# RAE
+# ==========================================================
+
+@app.get("/dictionary/rae")
+async def rae_lookup(q: str = Query(..., min_length=1)):
+    url = f"https://rae-api.com/api/words/{q}"
+    headers = {"accept": "application/json"}
+
+    api_key = os.getenv("RAE_API_KEY")
+    if api_key:
+        headers["X-API-KEY"] = api_key
+
+    async with httpx.AsyncClient(headers=headers, timeout=5.0) as client:
+        r = await client.get(url)
+
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail="RAE upstream error")
+
+    data = r.json()
+    definitions = []
+    for meaning in data.get("data", {}).get("meanings", []):
+        for sense in meaning.get("senses", []):
+            desc = sense.get("description")
+
+            if not desc:
+                continue
+
+            # skip references like "cena1"
+            if len(desc.split()) == 1 and any(c.isdigit() for c in desc):
+                continue
+
+            definitions.append(desc)
+
+    return {
+        "word": q.upper(),
+        "definitions": definitions
+    }

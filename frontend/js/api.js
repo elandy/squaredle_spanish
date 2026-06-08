@@ -42,3 +42,10 @@ export async function getProgress(sessionId) {
     const res = await fetch(`${API_BASE}/progress/${sessionId}`);
     return await res.json();
 }
+
+export async function fetchDefinition(word) {
+    const res = await fetch(
+        `${API_BASE}/dictionary/rae?q=${encodeURIComponent(word)}`
+    );
+    return res.json();
+}

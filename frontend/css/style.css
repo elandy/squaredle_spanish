@@ -179,3 +179,26 @@ h1 {
 
     white-space: nowrap;
 }
+
+/* word definition tooltip */
+#definition-tooltip {
+    position: fixed;
+    max-width: 320px;
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    font-size: 14px;
+    line-height: 1.3;
+    z-index: 10000;
+
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(5px);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+#definition-tooltip.active {
+    opacity: 1;
+    transform: translateY(0);
+}

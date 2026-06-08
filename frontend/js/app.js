@@ -2,7 +2,8 @@ import {
     getTodayPuzzle,
     createSession,
     submitWord,
-    getProgress
+    getProgress,
+    fetchDefinition,
 } from "./api.js";
 
 let puzzle;
@@ -17,6 +18,12 @@ let wordMap = {};
 let normalizedFoundWords = new Set();
 
 let dragging = false;
+
+document.addEventListener("click", (e) => {
+    if (!e.target.closest(".word-chip")) {
+        hideTooltip();
+    }
+});
 
 // ==========================================================
 // SOUND SYSTEM
@@ -54,6 +61,43 @@ function playLetterSound(index) {
     const rate = Math.pow(semitoneRatio, steps);
 
     playBuffer(letterBuffer, rate);
+}
+
+// ==========================================================
+// WORD DEFINITION TOOLTIP
+// ==========================================================
+
+const tooltip = document.getElementById("definition-tooltip");
+
+function showTooltip(word, rect) {
+    tooltip.textContent = "Cargando...";
+
+    tooltip.style.left = `${rect.left}px`;
+    tooltip.style.top = `${rect.bottom + 8}px`;
+
+    tooltip.classList.add("active");
+
+    fetchDefinition(word).then(data => {
+        tooltip.innerHTML = "";
+
+        const title = document.createElement("div");
+        title.className = "tooltip-word";
+        title.textContent = data.word;
+
+        tooltip.appendChild(title);
+
+        data.definitions.forEach((definition, index) => {
+            const item = document.createElement("div");
+            item.className = "tooltip-definition";
+            item.textContent = `${index + 1}. ${definition}`;
+
+            tooltip.appendChild(item);
+        });
+    });
+}
+
+function hideTooltip() {
+    tooltip.classList.remove("active");
 }
 
 // ==========================================================
@@ -331,7 +375,7 @@ function renderFoundWords() {
             const title = document.createElement("div");
             title.className = "word-group-title";
             title.textContent =
-                `${len} letters (+${group.total.length - group.found.length} words left)`;
+                `${len} letras (+${group.total.length - group.found.length} palabras faltantes)`;
 
             const wordsWrap = document.createElement("div");
             wordsWrap.className = "word-group-words";
@@ -342,6 +386,10 @@ function renderFoundWords() {
                     const chip = document.createElement("div");
                     chip.className = "word-chip found";
                     chip.textContent = word;
+                    chip.addEventListener("click", (e) => {
+                        const rect = chip.getBoundingClientRect();
+                        showTooltip(word, rect);
+                    });
                     wordsWrap.appendChild(chip);
                 });
 

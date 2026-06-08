@@ -2,13 +2,14 @@
 
 ## Overview
 
-Squaredle ES is a word puzzle game built with:
+Squaredle ES is a Spanish word puzzle game built with:
 
-- FastAPI backend
-- PostgreSQL (AWS RDS)
-- Vanilla JS frontend
-- SQLAlchemy ORM
-- Custom board generator + solver
+* FastAPI backend
+* PostgreSQL
+* Vanilla JavaScript frontend
+* SQLAlchemy ORM
+* Custom board generator and solver
+* Docker Compose deployment
 
 The game generates a 4x4 letter grid and computes all valid Spanish words that can be formed by adjacent tiles (including diagonals).
 
@@ -18,156 +19,263 @@ Players create a session per puzzle and submit words in real time.
 
 ## Project Structure
 
+```text
 src/
-  db/                database models + session setup
-  scripts/           puzzle generation + import tools
-  services/          game logic (PuzzleService)
-  main.py            FastAPI app
+├── db/                # Database models and session setup
+├── scripts/           # Puzzle generation and import tools
+├── services/          # Game logic (PuzzleService)
+└── main.py            # FastAPI application
 
 frontend/
-  index.html
-  css/
-  js/
+├── index.html
+├── css/
+└── js/
+
+docker-compose.yml
+Dockerfile
+```
 
 ---
 
-## Setup
+## Running with Docker Compose
+
+### Build and start all services
+
+```bash
+docker compose up --build
+```
+
+Run in detached mode:
+
+```bash
+docker compose up -d --build
+```
+
+---
+
+### Stop all services
+
+```bash
+docker compose down
+```
+
+---
+
+### View logs
+
+All services:
+
+```bash
+docker compose logs -f
+```
+
+Backend only:
+
+```bash
+docker compose logs -f api
+```
+
+---
+
+## Accessing the application
+
+Frontend:
+
+```text
+http://localhost:5500
+```
+
+Backend API:
+
+```text
+http://localhost:8000
+```
+
+API documentation:
+
+```text
+http://localhost:8000/docs
+```
+
+Health check:
+
+```text
+http://localhost:8000/health
+```
+
+---
+
+## Local Development (without Docker)
 
 ### Install dependencies
 
+```bash
 uv sync
+```
 
----
+### Start backend
 
-## Run the system
-
-### Start backend API
-
+```bash
 uvicorn src.main:app --reload --port 8000
+```
 
-API will be available at:
-http://localhost:8000
+### Start frontend
 
----
+From the frontend directory:
 
-### Start frontend (static server)
-
-Run inside the frontend/ folder:
-
+```bash
 python -m http.server 5500
+```
 
-Then open:
+Open:
+
+```text
 http://localhost:5500
+```
 
 ---
 
-## Puzzle generation
+## Puzzle Generation
 
 ### Generate a manual puzzle
 
+```bash
 python -m src.scripts.generate_puzzle --board MOCI/IENE/SQID/OUBF
+```
 
 Format:
-- 4 rows
-- letters separated by /
-- 4x4 grid required
+
+* 4 rows
+* Rows separated by `/`
+* 4x4 grid required
 
 ---
 
 ### Generate a random puzzle
 
+```bash
 python -m src.scripts.generate_puzzle
+```
 
 This will:
-- generate random board
-- validate solvability
-- ensure tile coverage
-- enforce word count constraints
+
+* Generate a random board
+* Validate solvability
+* Ensure tile coverage
+* Enforce word count constraints
 
 ---
 
-## Output files
+## Output Files
 
 After generation:
 
+```text
 daily_puzzle.json
 daily_solution.json
+```
 
 ### daily_puzzle.json
 
 Public game data:
 
+```json
 {
   "id": "...",
   "size": 4,
-  "board": [["A","B","C","D"], ...],
+  "board": [["A", "B", "C", "D"]],
   "word_count": 62
 }
+```
 
 ### daily_solution.json
 
-Contains full solution:
-- all valid words
-- display + normalized forms
-- board paths
-- statistics
+Contains:
+
+* All valid words
+* Display and normalized forms
+* Tile paths
+* Puzzle statistics
 
 ---
 
-## Import puzzle into database
+## Import Puzzle Into Database
 
+```bash
 python -m src.scripts.import_puzzle daily_puzzle.json daily_solution.json
+```
 
 This will:
-- create Puzzle row
-- store solution JSON
-- make puzzle available via API
+
+* Create a Puzzle row
+* Store solution JSON
+* Make the puzzle available through the API
 
 ---
 
-## API endpoints
+## API Endpoints
+
+### Health
+
+```http
+GET /health
+```
+
+---
 
 ### Puzzle
 
+```http
 GET /puzzle/today
 GET /puzzle/{puzzle_id}
+```
 
-Returns puzzle without solution data.
+Returns puzzle data without solution information.
 
 ---
 
 ### Session
 
+```http
 POST /session
+```
 
 Request:
 
+```json
 {
   "puzzle_id": "uuid"
 }
+```
 
 Response:
 
+```json
 {
   "session_id": "uuid"
 }
+```
 
 ---
 
 ### Gameplay
 
+```http
 POST /submit-word
+```
 
 Request:
 
+```json
 {
   "session_id": "uuid",
-  "puzzle_id": "uuid",
   "word": "string"
 }
+```
 
 Response:
 
+```json
 {
   "success": true,
   "normalized": "PALABRA",
@@ -178,15 +286,19 @@ Response:
   "total_words": 62,
   "completion": 8.12
 }
+```
 
 ---
 
 ### Progress
 
+```http
 GET /progress/{session_id}
+```
 
 Response:
 
+```json
 {
   "session_id": "uuid",
   "puzzle_id": "uuid",
@@ -197,112 +309,174 @@ Response:
   "words": ["PALABRA"],
   "display_words": ["Palabra"]
 }
+```
 
 ---
 
-### Found words (raw)
+### Dictionary
 
-GET /found-words/{session_id}
+```http
+GET /dictionary/rae?q=PALABRA
+```
 
-Returns normalized words only.
+Returns RAE definitions for discovered words.
+
+Example:
+
+```json
+{
+  "word": "CENÉ",
+  "definitions": [
+    "Tomar la cena",
+    "Comer en la cena una cosa"
+  ]
+}
+```
 
 ---
 
 ### Leaderboard
 
+```http
 GET /leaderboard/today
 GET /leaderboard/{puzzle_id}
+```
 
 ---
 
-## Word validation rules
+## Word Validation Rules
 
 A word is valid if:
 
-- exists in Spanish dictionary
-- exists in puzzle solution set
-- formed by adjacent tiles (diagonal allowed)
-- each tile used once per word
+* Exists in the Spanish dictionary
+* Exists in the puzzle solution set
+* Is formed by adjacent tiles (diagonals allowed)
+* Uses each tile at most once per word
 
 ---
 
-## Backend behavior
+## Backend Behavior
 
-- session persists per puzzle
-- found words stored in DB
-- scoring = len(word) - 3 (min 1)
-- progress computed from DB + solution mapping
+* Sessions persist per puzzle
+* Found words are stored in the database
+* Scoring formula: `max(len(word) - 3, 1)`
+* Progress is computed from database state and solution data
+* Solution data is never exposed through the API
 
 ---
 
-## Dictionary sources
+## Dictionary Sources
 
-Short wordlist:
+The wordlist used in this project is derived from:
+
+Short word list:
+
 https://github.com/eymenefealtun/all-words-in-all-languages/tree/main/Spanish
 
-Long wordlist:
+Long word list:
+
 https://github.com/keepassxreboot/keepassxc/discussions/9854
+
+## Optional RAE API Integration
+
+The game can display definitions from the RAE dictionary when hovering over discovered words.
+
+This feature uses the public RAE API:
+
+https://rae-api.com/
+
+An API key is **optional**. The application works without one, but providing a key may help avoid rate limits.
+
+### Configure API Key
+
+Create a `.env` file in the project root:
+
+```env
+RAE_API_KEY=your_api_key_here
+```
+
+### Docker Compose
+
+If using Docker Compose, ensure the environment variable is passed to the API container:
+
+```yaml
+services:
+  api:
+    environment:
+      - RAE_API_KEY=${RAE_API_KEY}
+```
+
+Then start or restart the stack:
+
+```bash
+docker compose up -d --build
+```
+
+### Endpoint
+
+```http
+GET /dictionary/rae?q=PALABRA
+```
+
+Example response:
+
+```json
+{
+  "word": "CENÉ",
+  "definitions": [
+    "Tomar la cena",
+    "Comer en la cena una cosa"
+  ]
+}
+```
+
+If the RAE service is unavailable, gameplay is unaffected. Dictionary lookups are optional and independent from word validation.
 
 ---
 
 ## Notes
 
-- frontend is stateless except session_id
-- backend is source of truth
-- puzzles are immutable after import
-- solution JSON is never exposed via API
-
-## Next steps
-
-### UI performance improvements <-- high priority
-
-Current behavior:
-- word validation happens server-side
-- full roundtrip on every submission
-- UI only updates after API response
-
-Planned improvement:
-- preload `solution.json` (or a reduced hash map) on puzzle load
-- perform instant client-side validation for:
-  - word existence
-  - duplicate detection
-  - early visual feedback
-- keep server as source of truth asynchronously
-- reconcile state periodically or on submit
-
-Target outcome:
-- immediate feedback on word selection
-- no perceived latency on valid/invalid words
-- reduced API dependency during gameplay loop
+* Frontend is stateless except for `session_id`
+* Backend is the source of truth
+* Puzzles are immutable after import
+* Solution JSON is never exposed through the API
 
 ---
+
+## Roadmap
 
 ### Leaderboards
 
 Planned features:
-- global leaderboard per puzzle
-- daily leaderboard
-- session-based ranking by:
-  - word count
-  - total score
-  - completion percentage
 
-API already partially supports:
-- `/leaderboard/today`
-- `/leaderboard/{puzzle_id}`
+* Global leaderboard per puzzle
+* Daily leaderboard
+* Ranking by:
+
+  * Word count
+  * Score
+  * Completion percentage
+
+Current API support:
+
+```http
+GET /leaderboard/today
+GET /leaderboard/{puzzle_id}
+```
 
 Still needed:
-- frontend integration
-- UI component for ranking display
-- optional real-time updates (polling or websocket later)
+
+* Frontend integration
+* Ranking UI
+* Optional realtime updates
 
 ---
 
-### Session & persistence improvements
+### Session Improvements
 
 Planned:
-- session expiration per puzzle day
-- cleanup of stale sessions
-- better handling of puzzle rotation in localStorage
 
----
+* Session expiration
+* Cleanup of stale sessions
+* Better puzzle rotation handling
+* Improved localStorage management
