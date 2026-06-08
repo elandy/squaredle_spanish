@@ -22,7 +22,7 @@ class PuzzleService:
                 .first()
             )
             if not puzzle: return None
-            return puzzle.puzzle_json
+            return puzzle.solution_json
 
     def get_puzzle(self, puzzle_id):
         with SessionLocal() as db:

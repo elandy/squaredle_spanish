@@ -1,0 +1,41 @@
+services:
+
+  postgres:
+    image: postgres:17
+
+    environment:
+      POSTGRES_DB: squaredle
+      POSTGRES_USER: squaredle
+      POSTGRES_PASSWORD: squaredle
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+
+    depends_on:
+      - postgres
+
+    env_file: .env
+
+#    environment:
+#      DATABASE_URL: postgresql://squaredle:squaredle@postgres:5432/squaredle
+
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+
+    depends_on:
+      - api
+
+    ports:
+      - "5500:80"
+
+volumes:
+  postgres_data:

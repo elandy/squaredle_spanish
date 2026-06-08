@@ -54,8 +54,7 @@ async def health():
 @app.get("/puzzle/today")
 async def get_today_puzzle():
     """
-    Returns only public puzzle information.
-    No solutions.
+    Returns today's puzzle.
     """
 
     puzzle = service.get_today_puzzle()

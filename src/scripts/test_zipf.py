@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from wordfreq import zipf_frequency
 
 from generate_puzzle import normalize
@@ -9,7 +11,9 @@ for word in words:
 
 from wordfreq import zipf_frequency
 
-with open("Spanish.txt", encoding="utf-16") as f:
+DATA_FILE = (Path(__file__).parent.parent/"data"/"Spanish.txt")
+
+with open(DATA_FILE, encoding="utf-16") as f:
     words = [line.strip() for line in f]
 
 more_english = []

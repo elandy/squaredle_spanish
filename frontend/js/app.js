@@ -13,7 +13,48 @@ let foundWords = new Set();
 let selectedCells = [];
 let currentWord = "";
 
+let wordMap = {};
+let normalizedFoundWords = new Set();
+
 let dragging = false;
+
+// ==========================================================
+// SOUND SYSTEM
+// ==========================================================
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+let letterBuffer;
+let correctBuffer;
+let wrongBuffer;
+
+async function loadSound(url) {
+    const res = await fetch(url);
+    const arrayBuffer = await res.arrayBuffer();
+    return await audioCtx.decodeAudioData(arrayBuffer);
+}
+
+correctBuffer = await loadSound("/assets/sounds/correct.mp3");
+wrongBuffer = await loadSound("/assets/sounds/wrong.mp3");
+letterBuffer = await loadSound("/assets/sounds/letter.mp3");
+
+function playBuffer(buffer, playbackRate = 1) {
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = playbackRate;
+
+    source.connect(audioCtx.destination);
+    source.start(0);
+}
+
+function playLetterSound(index) {
+    const semitoneRatio = Math.pow(2, 1 / 12);
+
+    const steps = Math.min(index - 1, 11); // cap at 12 notes
+    const rate = Math.pow(semitoneRatio, steps);
+
+    playBuffer(letterBuffer, rate);
+}
 
 // ==========================================================
 // INIT
@@ -22,14 +63,30 @@ let dragging = false;
 async function init() {
     puzzle = await getTodayPuzzle();
 
-    const savedSession  = localStorage.getItem("session_id");
+    wordMap = Object.fromEntries(
+        puzzle.words.map(w => [
+            w.normalized,
+            w.display
+        ])
+    );
+
+    const savedSession = localStorage.getItem("session_id");
     const savedPuzzle = localStorage.getItem("session_puzzle_id");
 
     if (!savedSession || savedPuzzle !== puzzle.id) {
         const session = await createSession(puzzle.id);
+
         sessionId = session.session_id;
-        localStorage.setItem("session_id", sessionId);
-        localStorage.setItem("session_puzzle_id", puzzle.id);
+
+        localStorage.setItem(
+            "session_id",
+            sessionId
+        );
+
+        localStorage.setItem(
+            "session_puzzle_id",
+            puzzle.id
+        );
     }
     else {
         sessionId = savedSession;
@@ -46,9 +103,8 @@ async function init() {
 
 async function loadProgress() {
     const progress = await getProgress(sessionId);
-
+    normalizedFoundWords = new Set(progress.words || []);
     foundWords = new Set(progress.display_words || []);
-
     updateProgress();
     renderFoundWords();
 }
@@ -160,6 +216,9 @@ function addCell(cell) {
 
     currentWord += cell.dataset.letter;
     updateCurrentWord();
+
+    // letter sound with pitch scaling
+    playLetterSound(selectedCells.length);
 }
 
 function isAdjacent(a, b) {
@@ -197,18 +256,34 @@ function updateCurrentWord() {
 async function submitCurrentWord() {
     if (!currentWord) return;
 
-    const result = await submitWord(
-        sessionId,
-        puzzle.id,
-        currentWord
-    );
+    const displayWord = wordMap[currentWord];
 
-    if (!result.success) return;
+    // invalid word
+    if (!displayWord) {
+        playBuffer(wrongBuffer);
+        return;
+    }
 
-    foundWords.add(result.display);
+    // already found
+    if (normalizedFoundWords.has(currentWord)) {
+        playBuffer(wrongBuffer);
+        return;
+    }
+
+    // instant UI update
+    normalizedFoundWords.add(currentWord);
+    foundWords.add(displayWord);
 
     renderFoundWords();
     updateProgress();
+
+    playBuffer(correctBuffer);
+
+    // fire-and-forget server update
+    submitWord(sessionId, puzzle.id, currentWord)
+        .catch(error => {
+            console.error("submit failed", error);
+        });
 }
 
 // ==========================================================
@@ -230,7 +305,7 @@ function renderFoundWords() {
 
 function updateProgress() {
     document.getElementById("progress").textContent =
-        `${foundWords.size} / ${puzzle.word_count}`;
+        `${normalizedFoundWords.size} / ${puzzle.word_count}`;
 }
 
 // ==========================================================

@@ -1,8 +1,9 @@
 import json
 import random
-from datetime import datetime
+from datetime import datetime, date
 
 from collections import Counter
+from pathlib import Path
 from statistics import mean
 
 import argparse
@@ -94,8 +95,9 @@ print("Loading dictionary...")
 
 trie = Trie()
 loaded_words = []
+DATA_FILE = (Path(__file__).parent.parent/"data"/"Spanish.txt")
 
-with open("Spanish.txt", encoding="utf-16") as f:
+with open(DATA_FILE, encoding="utf-16") as f:
     for line in f:
         original = line.strip()
         normalized = normalize(original)
@@ -283,9 +285,10 @@ max_length = max(lengths)
 # ==========================================
 # SAVE
 # ==========================================
+puzzle_id = date.today().isoformat()
 
 daily_solution = {
-    "id": datetime.now().isoformat(),
+    "id": puzzle_id,
     "size": SIZE,
     "board": board,
     "word_count": len(words),
@@ -315,7 +318,7 @@ daily_solution = {
 }
 
 daily_puzzle = {
-    "id": datetime.now().isoformat(),
+    "id": puzzle_id,
     "size": SIZE,
     "board": board,
     "word_count": len(words),
