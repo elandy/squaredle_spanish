@@ -14,7 +14,7 @@ app = FastAPI(title="Squaredle ES API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://squaredle-es.elandy.workers.dev/"
+        "https://squaredle-es.elandy.workers.dev"
     ],
     allow_credentials=True,
     allow_methods=["*"],
