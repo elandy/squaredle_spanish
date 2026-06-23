@@ -67,9 +67,12 @@ function playLetterSound(index) {
 // WORD DEFINITION TOOLTIP
 // ==========================================================
 
-const tooltip = document.getElementById("definition-tooltip");
+function getTooltip() {
+    return document.getElementById("definition-tooltip");
+}
 
 function showTooltip(word, rect) {
+    const tooltip = getTooltip();
     tooltip.textContent = "Cargando...";
 
     tooltip.style.left = `${rect.left}px`;
@@ -97,6 +100,7 @@ function showTooltip(word, rect) {
 }
 
 function hideTooltip() {
+    const tooltip = getTooltip();
     tooltip.classList.remove("active");
 }
 
