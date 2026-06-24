@@ -14,7 +14,8 @@ app = FastAPI(title="Squaredle ES API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://squaredle-es.elandy.workers.dev"
+        "https://squaredle-es.elandy.workers.dev",
+        "http://localhost:5500"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -146,34 +147,56 @@ async def leaderboard(puzzle_id: str):
 @app.get("/dictionary/rae")
 async def rae_lookup(q: str = Query(..., min_length=1)):
     url = f"https://rae-api.com/api/words/{q}"
-    headers = {"accept": "application/json"}
+
+    headers = {
+        "accept": "application/json"
+    }
 
     api_key = os.getenv("RAE_API_KEY")
     if api_key:
         headers["X-API-KEY"] = api_key
 
-    async with httpx.AsyncClient(headers=headers, timeout=5.0) as client:
-        r = await client.get(url)
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=5.0) as client:
+            r = await client.get(url)
 
-    if r.status_code != 200:
-        raise HTTPException(status_code=502, detail="RAE upstream error")
+        if r.status_code != 200:
+            return {
+                "word": q.upper(),
+                "definitions": ["La definición no fue encontrada."]
+            }
 
-    data = r.json()
-    definitions = []
-    for meaning in data.get("data", {}).get("meanings", []):
-        for sense in meaning.get("senses", []):
-            desc = sense.get("description")
+        data = r.json()
 
-            if not desc:
-                continue
+        definitions = []
 
-            # skip references like "cena1"
-            if len(desc.split()) == 1 and any(c.isdigit() for c in desc):
-                continue
+        for meaning in data.get("data", {}).get("meanings", []):
+            for sense in meaning.get("senses", []):
+                desc = sense.get("description")
 
-            definitions.append(desc)
+                if not desc:
+                    continue
 
-    return {
-        "word": q.upper(),
-        "definitions": definitions
-    }
+                if len(desc.split()) == 1 and any(c.isdigit() for c in desc):
+                    continue
+
+                definitions.append(desc)
+
+        if not definitions:
+            definitions = ["La definición no fue encontrada."]
+        else:
+            definitions = [
+                f"{i}. {definition}"
+                for i, definition in enumerate(definitions, start=1)
+            ]
+
+        return {
+            "word": q.upper(),
+            "definitions": definitions
+        }
+
+    except Exception:
+        return {
+            "word": q.upper(),
+            "definitions": ["La definición no fue encontrada."]
+        }

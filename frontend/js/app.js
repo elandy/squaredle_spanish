@@ -89,10 +89,10 @@ function showTooltip(word, rect) {
 
         tooltip.appendChild(title);
 
-        data.definitions.forEach((definition, index) => {
+        data.definitions.forEach(definition => {
             const item = document.createElement("div");
             item.className = "tooltip-definition";
-            item.textContent = `${index + 1}. ${definition}`;
+            item.textContent = definition;
 
             tooltip.appendChild(item);
         });

@@ -2,7 +2,14 @@ body {
     font-family: sans-serif;
     margin: 0;
     padding: 0;
-    background: #f5f5f5;
+
+    background:
+        radial-gradient(circle at top left, #cfe3ff 0%, transparent 40%),
+        radial-gradient(circle at top right, #e0d1ff 0%, transparent 35%),
+        linear-gradient(180deg, #dfe8f7 0%, #d3def1 100%);
+
+    color: #2d3748;
+    min-height: 100vh;
 }
 
 .app {
@@ -14,6 +21,16 @@ body {
 h1 {
     text-align: center;
     margin-bottom: 5px;
+
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+
+    color: #5d4a2a;
+
+    text-shadow:
+        0 1px 0 rgba(255,255,255,0.7),
+        0 2px 6px rgba(0,0,0,0.08);
 }
 
 #progress {
@@ -143,7 +160,12 @@ h1 {
     padding: 10px;
     border-radius: 10px;
 
-    background: #ffffff;
+    background:
+        linear-gradient(
+            145deg,
+            #fff4c9,
+            #ffdca8
+        );
     box-shadow:
         2px 2px 6px rgba(0,0,0,0.1),
         -2px -2px 5px rgba(255,255,255,0.7);
@@ -169,7 +191,12 @@ h1 {
 
     border-radius: 6px;
 
-    background: linear-gradient(145deg, #f3f3f3, #dcdcdc);
+    background:
+        linear-gradient(
+            145deg,
+            #fffdf3,
+            #ffeecf
+        );
     box-shadow:
         2px 2px 4px rgba(0,0,0,0.2),
         -1px -1px 3px rgba(255,255,255,0.8);
@@ -201,4 +228,48 @@ h1 {
 #definition-tooltip.active {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* Mobile layout */
+@media (max-width: 768px) {
+
+    .app {
+        padding: 12px;
+    }
+
+    .game-layout {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .left-panel,
+    .right-panel {
+        width: 100%;
+    }
+
+    .right-panel {
+        max-height: none;
+        overflow-y: visible;
+        padding-right: 0;
+    }
+
+    #board {
+        justify-content: center;
+    }
+
+    .cell {
+        width: min(20vw, 70px);
+        height: min(20vw, 70px);
+        font-size: min(6vw, 22px);
+    }
+
+    #current-word {
+        font-size: 22px;
+        margin-bottom: 12px;
+    }
+
+    #definition-tooltip {
+        max-width: calc(100vw - 24px);
+    }
 }
