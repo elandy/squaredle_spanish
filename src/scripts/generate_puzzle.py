@@ -33,7 +33,7 @@ def parse_board(text):
 SIZE = 4
 
 MIN_WORDS = 40
-MAX_WORDS = 85
+MAX_WORDS = 140
 FREQUENCY_FILTER = 3.0
 LETTERS = (
     "EEEEEEEEEEEE"
