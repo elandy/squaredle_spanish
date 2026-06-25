@@ -3,8 +3,9 @@ import {
     createSession,
     submitWord,
     getProgress,
-    fetchDefinition,
 } from "./api.js";
+import { correctBuffer, wrongBuffer, playBuffer, playLetterSound, toggleMute, isMuted} from "./audio.js";
+import { showTooltip, hideTooltip} from "./tooltip.js";
 
 let puzzle;
 let sessionId;
@@ -23,85 +24,6 @@ document.addEventListener("click", (e) => {
         hideTooltip();
     }
 });
-
-// ==========================================================
-// SOUND SYSTEM
-// ==========================================================
-
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-let letterBuffer;
-let correctBuffer;
-let wrongBuffer;
-
-async function loadSound(url) {
-    const res = await fetch(url);
-    const arrayBuffer = await res.arrayBuffer();
-    return await audioCtx.decodeAudioData(arrayBuffer);
-}
-
-correctBuffer = await loadSound("/assets/sounds/correct.mp3");
-wrongBuffer = await loadSound("/assets/sounds/wrong.mp3");
-letterBuffer = await loadSound("/assets/sounds/letter.mp3");
-
-function playBuffer(buffer, playbackRate = 1) {
-    const source = audioCtx.createBufferSource();
-    source.buffer = buffer;
-    source.playbackRate.value = playbackRate;
-
-    source.connect(audioCtx.destination);
-    source.start(0);
-}
-
-function playLetterSound(index) {
-    const semitoneRatio = Math.pow(2, 1 / 12);
-
-    const steps = Math.min(index - 1, 11); // cap at 12 notes
-    const rate = Math.pow(semitoneRatio, steps);
-
-    playBuffer(letterBuffer, rate);
-}
-
-// ==========================================================
-// WORD DEFINITION TOOLTIP
-// ==========================================================
-
-function getTooltip() {
-    return document.getElementById("definition-tooltip");
-}
-
-function showTooltip(word, rect) {
-    const tooltip = getTooltip();
-    tooltip.textContent = "Cargando...";
-
-    tooltip.style.left = `${rect.left}px`;
-    tooltip.style.top = `${rect.bottom + 8}px`;
-
-    tooltip.classList.add("active");
-
-    fetchDefinition(word).then(data => {
-        tooltip.innerHTML = "";
-
-        const title = document.createElement("div");
-        title.className = "tooltip-word";
-        title.textContent = data.word;
-
-        tooltip.appendChild(title);
-
-        data.definitions.forEach(definition => {
-            const item = document.createElement("div");
-            item.className = "tooltip-definition";
-            item.textContent = definition;
-
-            tooltip.appendChild(item);
-        });
-    });
-}
-
-function hideTooltip() {
-    const tooltip = getTooltip();
-    tooltip.classList.remove("active");
-}
 
 // ==========================================================
 // INIT
@@ -136,6 +58,21 @@ async function init() {
 
     renderBoard();
 }
+
+const muteBtn = document.getElementById("mute-btn");
+
+function updateMuteButton() {
+    muteBtn.textContent = isMuted()
+        ? "🔇"
+        : "🔊";
+}
+
+muteBtn.addEventListener("click", () => {
+    toggleMute();
+    updateMuteButton();
+});
+
+updateMuteButton();
 
 // ==========================================================
 // PROGRESS

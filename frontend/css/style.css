@@ -32,6 +32,35 @@ h1 {
         0 1px 0 rgba(255,255,255,0.7),
         0 2px 6px rgba(0,0,0,0.08);
 }
+.top-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+
+    margin-bottom: 5px;
+}
+
+.top-bar h1 {
+    margin: 0;
+}
+
+#mute-btn {
+    border: none;
+    border-radius: 8px;
+
+    padding: 8px 10px;
+
+    cursor: pointer;
+
+    background: rgba(255,255,255,0.7);
+
+    font-size: 18px;
+
+    box-shadow:
+        2px 2px 5px rgba(0,0,0,0.12),
+        -2px -2px 5px rgba(255,255,255,0.8);
+}
 
 #progress {
     text-align: center;
