@@ -14,7 +14,6 @@ let foundWords = new Set();
 let selectedCells = [];
 let currentWord = "";
 
-let wordMap = {};
 let normalizedFoundWords = new Set();
 
 let dragging = false;
@@ -110,13 +109,6 @@ function hideTooltip() {
 
 async function init() {
     puzzle = await getTodayPuzzle();
-
-    wordMap = Object.fromEntries(
-        puzzle.words.map(w => [
-            w.normalized,
-            w.display
-        ])
-    );
 
     const savedSession = localStorage.getItem("session_id");
     const savedPuzzle = localStorage.getItem("session_puzzle_id");
@@ -298,13 +290,22 @@ function updateCurrentWord() {
 // SERVER
 // ==========================================================
 
+async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function submitCurrentWord() {
     if (!currentWord) return;
 
-    const displayWord = wordMap[currentWord];
+    const wordWithSalt = currentWord + puzzle.id;
+    const wordHash = await sha256(wordWithSalt);
+    const isValid = puzzle.word_hashes.includes(wordHash);
 
     // invalid word
-    if (!displayWord) {
+    if (!isValid) {
         playBuffer(wrongBuffer);
         spawnWordAnimation(currentWord, "wrong");
         currentWord = "";
@@ -322,15 +323,28 @@ async function submitCurrentWord() {
 
     // instant UI update
     normalizedFoundWords.add(currentWord);
-    foundWords.add(displayWord);
+    
+    // Add temporary uppercase guess as display word
+    const tempDisplayWord = currentWord;
+    foundWords.add(tempDisplayWord);
 
     renderFoundWords();
     updateProgress();
-    spawnWordAnimation(displayWord, "correct");
+    spawnWordAnimation(tempDisplayWord, "correct");
 
     playBuffer(correctBuffer);
+    
     // fire-and-forget server update
-    submitWord(sessionId, puzzle.id, currentWord)
+    const submittedWord = currentWord;
+    submitWord(sessionId, puzzle.id, submittedWord)
+        .then(result => {
+            if (result && result.success) {
+                // Swap temporary word for accented display word
+                foundWords.delete(tempDisplayWord);
+                foundWords.add(result.display);
+                renderFoundWords();
+            }
+        })
         .catch(error => {
             console.error("submit failed", error);
         });
@@ -347,24 +361,27 @@ function renderFoundWords() {
     const container = document.getElementById("found-words");
     container.innerHTML = "";
 
-    // Build full solution groups
     const groups = {};
 
-    for (const w of puzzle.words) {
-        const len = w.display.length;
+    // Initialize groups from word_lengths
+    for (const [lenStr, total] of Object.entries(puzzle.word_lengths || {})) {
+        const len = Number(lenStr);
+        groups[len] = {
+            totalCount: total,
+            found: []
+        };
+    }
 
+    // Populate found words into their groups
+    for (const word of foundWords) {
+        const len = word.length;
         if (!groups[len]) {
             groups[len] = {
-                total: [],
+                totalCount: 0,
                 found: []
             };
         }
-
-        groups[len].total.push(w.display);
-
-        if (foundWords.has(w.display)) {
-            groups[len].found.push(w.display);
-        }
+        groups[len].found.push(word);
     }
 
     Object.keys(groups)
@@ -372,6 +389,7 @@ function renderFoundWords() {
         .sort((a, b) => a - b)
         .forEach(len => {
             const group = groups[len];
+            const missing = Math.max(0, group.totalCount - group.found.length);
 
             const wrapper = document.createElement("div");
             wrapper.className = "word-group";
@@ -379,13 +397,13 @@ function renderFoundWords() {
             const title = document.createElement("div");
             title.className = "word-group-title";
             title.textContent =
-                `${len} letras (+${group.total.length - group.found.length} palabras faltantes)`;
+                `${len} letras (+${missing} palabras faltantes)`;
 
             const wordsWrap = document.createElement("div");
             wordsWrap.className = "word-group-words";
 
             group.found
-                .sort()
+                .sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }))
                 .forEach(word => {
                     const chip = document.createElement("div");
                     chip.className = "word-chip found";

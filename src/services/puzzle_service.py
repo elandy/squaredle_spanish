@@ -6,10 +6,38 @@ from src.db.models import (
     PlayerSession,
     FoundWord,
 )
+import hashlib
+from collections import Counter
 
 
 def calculate_word_score(word: str) -> int:
     return max(1, len(word) - 3)
+
+
+def _get_safe_puzzle_data(puzzle: Puzzle) -> dict:
+    pj = puzzle.puzzle_json
+    sj = puzzle.solution_json
+
+    words = sj.get("words", [])
+    lengths = [len(w["normalized"]) for w in words]
+    word_lengths = dict(Counter(lengths))
+
+    word_hashes = []
+    for w in words:
+        normalized = w["normalized"]
+        salted = f"{normalized}{puzzle.id}"
+        h = hashlib.sha256(salted.encode("utf-8")).hexdigest()
+        word_hashes.append(h)
+
+    return {
+        "id": puzzle.id,
+        "size": pj.get("size", 4),
+        "board": pj.get("board", []),
+        "word_count": pj.get("word_count", 0),
+        "word_lengths": word_lengths,
+        "word_hashes": word_hashes,
+    }
+
 
 class PuzzleService:
     def get_today_puzzle(self):
@@ -22,7 +50,7 @@ class PuzzleService:
                 .first()
             )
             if not puzzle: return None
-            return puzzle.solution_json
+            return _get_safe_puzzle_data(puzzle)
 
     def get_puzzle(self, puzzle_id):
         with SessionLocal() as db:
@@ -34,7 +62,8 @@ class PuzzleService:
                 .first()
             )
             if not puzzle: return None
-            return puzzle.puzzle_json
+            return _get_safe_puzzle_data(puzzle)
+
 
     def create_session(self, puzzle_id):
         with SessionLocal() as db:
