@@ -64,7 +64,6 @@ h1 {
 
 #progress {
     text-align: center;
-    margin-bottom: 10px;
 }
 
 #current-word {
@@ -301,4 +300,170 @@ h1 {
     #definition-tooltip {
         max-width: calc(100vw - 24px);
     }
+}
+
+/* ==========================================
+   Modal
+   ========================================== */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background: rgba(0,0,0,.45);
+    backdrop-filter: blur(4px);
+
+    z-index: 999999;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-card {
+    width: min(420px, calc(100vw - 40px));
+
+    padding: 28px;
+
+    border-radius: 18px;
+
+    background: linear-gradient(
+        145deg,
+        #fff9df,
+        #ffe7b5
+    );
+
+    box-shadow: 0 20px 50px rgba(0,0,0,.3);
+}
+
+.modal-card h2 {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.modal-card p {
+    margin-bottom: 18px;
+    color: #555;
+}
+
+.modal-card input {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 12px;
+
+    font-size: 16px;
+
+    border: none;
+    border-radius: 10px;
+
+    outline: none;
+
+    background: white;
+}
+
+.modal-card input:focus {
+    box-shadow: 0 0 0 3px rgba(255,190,70,.35);
+}
+
+.modal-card button {
+    margin-top: 16px;
+
+    width: 100%;
+
+    padding: 12px;
+
+    border: none;
+    border-radius: 10px;
+
+    font-size: 16px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    background: linear-gradient(
+        145deg,
+        #9be7aa,
+        #73d68b
+    );
+
+    transition: transform .1s;
+}
+
+.modal-card button:hover {
+    transform: translateY(-1px);
+}
+
+.modal-card button:active {
+    transform: translateY(1px);
+}
+
+.modal-error {
+    color: #c0392b;
+    font-size: 14px;
+    margin-top: 10px;
+    min-height: 18px;
+}
+
+
+.meta-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #333;
+}
+.meta-sep {
+    opacity: 0.5;
+}
+#player-info {
+    font-weight: 600;
+}
+
+#leaderboard-btn {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+#leaderboard-btn:hover {
+    background: #f2f2f2;
+}
+
+.leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.leaderboard-title {
+    font-weight: 700;
+    font-size: 18px;
+}
+
+#leaderboard-date {
+    font-size: 18px;
+    opacity: 0.7;
+}
+#leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start; /* prevents stretching */
+}
+#leaderboard-list .word-chip {
+    display: inline-flex;
+    width: auto;          /* stop full width */
+    align-self: flex-start;
 }

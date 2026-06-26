@@ -19,11 +19,12 @@ services:
 
     depends_on:
       - postgres
+#
+#    env_file: .env
 
-    env_file: .env
-
-#    environment:
-#      DATABASE_URL: postgresql://squaredle:squaredle@postgres:5432/squaredle
+    environment:
+      DATABASE_URL: postgresql+psycopg://squaredle:squaredle@postgres:5432/squaredle
+      RAE_API_KEY: rae_live_bbd43a71d5fecdbe57d31cd233b5518e6e3c231d0c922584d1fee2a3a3c1a88d
 
     ports:
       - "8000:8000"

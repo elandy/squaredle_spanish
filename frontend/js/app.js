@@ -3,9 +3,11 @@ import {
     createSession,
     submitWord,
     getProgress,
+    createPlayer, getLeaderboard
 } from "./api.js";
 import { correctBuffer, wrongBuffer, playBuffer, playLetterSound, toggleMute, isMuted} from "./audio.js";
 import { showTooltip, hideTooltip} from "./tooltip.js";
+import { askUsername } from "./username.js";
 
 let puzzle;
 let sessionId;
@@ -25,6 +27,11 @@ document.addEventListener("click", (e) => {
     }
 });
 
+document.getElementById("leaderboard-btn").addEventListener("click", async () => {
+    const data = await getLeaderboard()
+    showLeaderboardModal(data);
+});
+
 // ==========================================================
 // INIT
 // ==========================================================
@@ -36,26 +43,26 @@ async function init() {
     const savedPuzzle = localStorage.getItem("session_puzzle_id");
 
     if (!savedSession || savedPuzzle !== puzzle.id) {
-        const session = await createSession(puzzle.id);
+        const session = await createSession(
+            puzzle.id,
+            localStorage.getItem("player_id")
+        );
 
         sessionId = session.session_id;
 
-        localStorage.setItem(
-            "session_id",
-            sessionId
-        );
-
-        localStorage.setItem(
-            "session_puzzle_id",
-            puzzle.id
-        );
-    }
-    else {
+        localStorage.setItem("session_id", sessionId);
+        localStorage.setItem("session_puzzle_id", puzzle.id);
+    } else {
         sessionId = savedSession;
     }
 
-    await loadProgress();
+    let playerId = localStorage.getItem("player_id");
 
+    if (!playerId) {
+        await askUsername(sessionId);
+    }
+
+    await loadProgress();
     renderBoard();
 }
 
@@ -80,10 +87,16 @@ updateMuteButton();
 
 async function loadProgress() {
     const progress = await getProgress(sessionId);
+
     normalizedFoundWords = new Set(progress.words || []);
     foundWords = new Set(progress.display_words || []);
+
     updateProgress();
     renderFoundWords();
+
+    const username = progress.username || "Anónimo";
+
+    document.getElementById("player-info").textContent = `${username}`;
 }
 
 // ==========================================================
@@ -381,6 +394,36 @@ function spawnWordAnimation(text, type) {
         el.remove();
     });
 }
+
+// ==========================================================
+// Leaderboard
+// ==========================================================
+
+function showLeaderboardModal(data) {
+    const modal = document.getElementById("leaderboard-modal");
+    const list = document.getElementById("leaderboard-list");
+    const dateEl = document.getElementById("leaderboard-date");
+
+    list.innerHTML = "";
+
+    dateEl.textContent = data.date;
+
+    data.leaderboard.forEach((row, i) => {
+        const div = document.createElement("div");
+
+        div.className = "word-chip";
+        div.textContent =
+            `${i + 1}. ${row.username ?? "Anónimo"} - ${row.words_found}`;
+
+        list.appendChild(div);
+    });
+
+    modal.classList.remove("hidden");
+}
+
+document.getElementById("close-leaderboard").onclick = () => {
+    document.getElementById("leaderboard-modal").classList.add("hidden");
+};
 
 // ==========================================================
 // START

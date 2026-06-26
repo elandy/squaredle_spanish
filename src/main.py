@@ -34,11 +34,16 @@ class SubmitWordRequest(BaseModel):
 
 class CreateSessionRequest(BaseModel):
     puzzle_id: str
+    player_id: str | None = None
 
 class SessionResponse(BaseModel):
     session_id: str
     puzzle_id: str
     created_at: datetime
+
+class CreatePlayerRequest(BaseModel):
+    session_id: str
+    username: str
 
 # ==========================================================
 # HEALTH
@@ -83,13 +88,14 @@ async def get_puzzle(puzzle_id: str):
 async def create_session(request: CreateSessionRequest):
 
     session_id = service.create_session(
-        puzzle_id=request.puzzle_id
+        puzzle_id=request.puzzle_id,
+        player_id=request.player_id,
     )
 
     return SessionResponse(
         session_id=session_id,
         puzzle_id=request.puzzle_id,
-        created_at=datetime.now()
+        created_at=datetime.now(),
     )
 
 @app.get("/session/{session_id}")
@@ -101,6 +107,18 @@ async def get_session(session_id: str):
         raise HTTPException(404, "Session not found")
 
     return session
+
+@app.post("/player")
+async def create_player(request: CreatePlayerRequest):
+    player = service.create_player(
+        session_id=request.session_id,
+        username=request.username,
+    )
+
+    return {
+        "id": player.id,
+        "username": player.username,
+    }
 
 # ==========================================================
 # GAMEPLAY

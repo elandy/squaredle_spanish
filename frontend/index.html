@@ -13,7 +13,15 @@
         <h1>Squaredle Español</h1>
         <button id="mute-btn">🔊</button>
     </div>
-    <div id="progress">0 / ?</div>
+
+    <div class="meta-bar">
+        <div id="player-info">Anónimo</div>
+        <span class="meta-sep">•</span>
+        <div id="progress">0/0 palabras</div>
+        <span class="meta-sep">•</span>
+        <button id="leaderboard-btn">Tabla de Clasificación</button>
+    </div>
+
     <div id="current-word"></div>
     <div class="game-layout">
         <div class="left-panel">
@@ -24,7 +32,44 @@
         </div>
     </div>
 </div>
+
+<div id="username-modal" class="modal hidden">
+    <div class="modal-card">
+        <h2>¡Bienvenido!</h2>
+
+        <p>
+            Elige un nombre para aparecer en la clasificación.
+        </p>
+
+        <input
+            id="username-input"
+            type="text"
+            maxlength="20"
+            placeholder="Nombre de usuario"
+            autocomplete="off"
+        >
+
+        <div id="username-error" class="modal-error"></div>
+
+        <button id="username-submit">
+            Continuar
+        </button>
+    </div>
+</div>
+
 <div id="definition-tooltip"></div>
+
+<div id="leaderboard-modal" class="modal hidden">
+    <div class="modal-card">
+        <div class="leaderboard-header">
+            <div class="leaderboard-title">Leaderboard</div>
+            <div id="leaderboard-date"></div>
+        </div>
+        <div id="leaderboard-list"></div>
+        <button id="close-leaderboard">Cerrar</button>
+    </div>
+</div>
+
 <script type="module" src="config.js"></script>
 <script type="module" src="./js/app.js"></script>
 

@@ -5,13 +5,16 @@ export async function getTodayPuzzle() {
     return await res.json();
 }
 
-export async function createSession(puzzleId) {
+export async function createSession(puzzleId, playerId = null) {
     const res = await fetch(`${API_BASE}/session`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ puzzle_id: puzzleId })
+        body: JSON.stringify({
+            puzzle_id: puzzleId,
+            player_id: playerId
+        })
     });
 
     return await res.json();
@@ -48,4 +51,31 @@ export async function fetchDefinition(word) {
         `${API_BASE}/dictionary/rae?q=${encodeURIComponent(word)}`
     );
     return res.json();
+}
+
+export async function getLeaderboard() {
+    const res = await fetch(
+        `${API_BASE}/leaderboard/today`
+    );
+    return res.json();
+}
+
+
+export async function createPlayer(sessionId, username) {
+    const res = await fetch(`${API_BASE}/player`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            session_id: sessionId,
+            username
+        })
+    });
+
+    if (!res.ok) {
+        throw await res.json();
+    }
+
+    return await res.json();
 }

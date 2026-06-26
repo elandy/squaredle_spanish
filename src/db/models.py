@@ -28,11 +28,23 @@ class PlayerSession(Base):
     puzzle_id: Mapped[str] = mapped_column(ForeignKey("puzzles.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
     last_seen: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
-    completed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     found_words = relationship("FoundWord", back_populates="session", cascade="all, delete-orphan")
     score: Mapped[int] = mapped_column(default=0)
     found_count: Mapped[int] = mapped_column(default=0)
-    
+
+    player_id: Mapped[str | None] = mapped_column(ForeignKey("players.id"), nullable=True)
+    player: Mapped["Player | None"] = relationship(back_populates="sessions")
+
+class Player(Base):
+    __tablename__ = "players"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
+
+    sessions: Mapped[list["PlayerSession"]] = relationship(back_populates="player")
+
 class FoundWord(Base):
     __tablename__ = "found_words"
 

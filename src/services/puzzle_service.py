@@ -1,10 +1,12 @@
 from datetime import date, datetime, UTC
+
+from fastapi import HTTPException
 from sqlalchemy import func
 from src.db.database import SessionLocal
 from src.db.models import (
     Puzzle,
     PlayerSession,
-    FoundWord,
+    FoundWord, Player,
 )
 import hashlib
 from collections import Counter
@@ -65,13 +67,14 @@ class PuzzleService:
             return _get_safe_puzzle_data(puzzle)
 
 
-    def create_session(self, puzzle_id):
+    def create_session(self, puzzle_id, player_id: str | None = None):
         with SessionLocal() as db:
             session = PlayerSession(
                 puzzle_id=puzzle_id,
                 created_at=datetime.now(UTC),
                 last_seen=datetime.now(UTC),
                 completed_at=None,
+                player_id=player_id,
             )
             db.add(session)
             db.commit()
@@ -220,7 +223,8 @@ class PuzzleService:
                 "score": sum(len(w.word) - 3 for w in found_words),
                 "completed": len(found_words) == puzzle.puzzle_json["word_count"],
                 "words": normalized_words,
-                "display_words": display_words
+                "display_words": display_words,
+                "username": session.player.username if session.player else None,
             }
 
     def get_found_words(self, session_id):
@@ -236,49 +240,85 @@ class PuzzleService:
 
     def get_today_leaderboard(self):
         with SessionLocal() as db:
+            today_date = date.today()
             puzzle = (
                 db.query(Puzzle)
                 .filter(
-                    Puzzle.puzzle_date == date.today()
+                    Puzzle.puzzle_date == today_date
                 )
                 .first()
             )
-            if not puzzle: return []
-            return self.get_leaderboard(puzzle.id)
+            if not puzzle: return { 'date': today_date.isoformat(), 'leaderboard': []}
+            leaderboard = self.get_leaderboard(puzzle.id)
+            return {'date': today_date.isoformat(), 'leaderboard': leaderboard}
 
-    def get_leaderboard(self, puzzle_id):
+    def get_leaderboard(self, puzzle_id: str):
         with SessionLocal() as db:
             results = (
                 db.query(
-                    PlayerSession.id,
-                    func.count(
-                        FoundWord.id
-                    ).label("words_found")
+                    PlayerSession.id.label("session_id"),
+                    Player.username.label("username"),
+                    func.count(FoundWord.id).label("words_found"),
                 )
                 .outerjoin(
                     FoundWord,
-                    FoundWord.session_id
-                    == PlayerSession.id
+                    FoundWord.session_id == PlayerSession.id,
+                )
+                .outerjoin(
+                    Player,
+                    Player.id == PlayerSession.player_id,
                 )
                 .filter(
-                    PlayerSession.puzzle_id
-                    == puzzle_id
+                    PlayerSession.puzzle_id == puzzle_id
                 )
                 .group_by(
-                    PlayerSession.id
+                    PlayerSession.id,
+                    Player.username,
                 )
                 .order_by(
-                    func.count(
-                        FoundWord.id
-                    ).desc()
+                    func.count(FoundWord.id).desc()
                 )
                 .limit(100)
                 .all()
             )
+
             return [
                 {
-                    "session_id": row.id,
+                    "session_id": row.session_id,
+                    "username": row.username,
                     "words_found": row.words_found,
                 }
                 for row in results
             ]
+
+    def create_player(self, session_id: str, username: str) -> Player:
+        username = username.strip().lower()
+        if not username:
+            raise ValueError("Username cannot be empty")
+
+        with SessionLocal() as db:
+            session = (
+                db.query(PlayerSession)
+                .filter(PlayerSession.id == session_id)
+                .first()
+            )
+
+            if not session: raise ValueError("Session not found")
+
+            existing = (
+                db.query(Player)
+                .filter(Player.username == username)
+                .first()
+            )
+
+            if existing: raise HTTPException(status_code=409, detail="Username already taken")
+
+            player = Player(username=username)
+            db.add(player)
+            db.flush()
+
+            session.player = player
+            db.commit()
+            db.refresh(player)
+
+            return player

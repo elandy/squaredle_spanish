@@ -447,36 +447,9 @@ If the RAE service is unavailable, gameplay is unaffected. Dictionary lookups ar
 
 ### Leaderboards
 
-Planned features:
-
-* Global leaderboard per puzzle
-* Daily leaderboard
+Pending features:
 * Ranking by:
-
-  * Word count
   * Score
   * Completion percentage
+  * Current leaderboard is limited to 100 entries. Improve current user display in the leaderboard.
 
-Current API support:
-
-```http
-GET /leaderboard/today
-GET /leaderboard/{puzzle_id}
-```
-
-Still needed:
-
-* Frontend integration
-* Ranking UI
-* Optional realtime updates
-
----
-
-### Session Improvements
-
-Planned:
-
-* Session expiration
-* Cleanup of stale sessions
-* Better puzzle rotation handling
-* Improved localStorage management
