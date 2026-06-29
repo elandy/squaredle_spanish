@@ -54,6 +54,8 @@ class FoundWord(Base):
     session = relationship("PlayerSession",back_populates="found_words")
 
     word: Mapped[str] = mapped_column(String, index=True)
+    bonus: Mapped[bool] = mapped_column(default=False)
+
     found_at: Mapped[datetime]
     score: Mapped[int] = mapped_column(default=1)
 

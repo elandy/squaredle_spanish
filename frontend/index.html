@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="es" translate="no">
 <head>
     <meta charset="utf-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Squaredle Español</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body translate="no">
 
-<div class="app">
+<div class="app" translate="no">
     <div class="top-bar">
         <h1>Squaredle Español</h1>
         <button id="mute-btn">🔊</button>
@@ -17,18 +18,22 @@
     <div class="meta-bar">
         <div id="player-info">Anónimo</div>
         <span class="meta-sep">•</span>
-        <div id="progress">0/0 palabras</div>
+        <div id="progress" class="progress-container">
+            <div class="progress-bar"></div>
+            <div class="progress-text"></div>
+        </div>
         <span class="meta-sep">•</span>
         <button id="leaderboard-btn">Tabla de Clasificación</button>
     </div>
 
-    <div id="current-word"></div>
+    <div id="current-word" translate="no"></div>
+
     <div class="game-layout">
         <div class="left-panel">
-            <div id="board"></div>
+            <div id="board" translate="no"></div>
         </div>
         <div class="right-panel">
-            <div id="found-words"></div>
+            <div id="found-words" translate="no"></div>
         </div>
     </div>
 </div>
@@ -57,7 +62,7 @@
     </div>
 </div>
 
-<div id="definition-tooltip"></div>
+<div id="definition-tooltip" translate="no"></div>
 
 <div id="leaderboard-modal" class="modal hidden">
     <div class="modal-card">

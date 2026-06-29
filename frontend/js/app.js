@@ -13,11 +13,12 @@ let puzzle;
 let sessionId;
 
 let foundWords = new Set();
+let foundBonusWords = new Set();
+let normalizedFoundWords = new Set();
+let normalizedBonusWords = new Set();
 
 let selectedCells = [];
 let currentWord = "";
-
-let normalizedFoundWords = new Set();
 
 let dragging = false;
 
@@ -89,7 +90,9 @@ async function loadProgress() {
     const progress = await getProgress(sessionId);
 
     normalizedFoundWords = new Set(progress.words || []);
+    normalizedBonusWords = new Set(progress.bonus_words || []);
     foundWords = new Set(progress.display_words || []);
+    foundBonusWords = new Set(progress.display_bonus_words || []);
 
     updateProgress();
     renderFoundWords();
@@ -115,6 +118,8 @@ function renderBoard() {
             const cell = document.createElement("div");
 
             cell.className = "cell";
+            cell.setAttribute("translate", "no");
+
             cell.textContent = puzzle.board[row][col];
 
             cell.dataset.row = row;
@@ -252,7 +257,8 @@ async function submitCurrentWord() {
 
     const wordWithSalt = currentWord + puzzle.id;
     const wordHash = await sha256(wordWithSalt);
-    const isValid = puzzle.word_hashes.includes(wordHash);
+    const isValid = wordHash in puzzle.words;
+    const isBonus = puzzle.words[wordHash];
 
     // invalid word
     if (!isValid) {
@@ -264,7 +270,10 @@ async function submitCurrentWord() {
     }
 
     // already found
-    if (normalizedFoundWords.has(currentWord)) {
+    if (
+        normalizedFoundWords.has(currentWord) ||
+        normalizedBonusWords.has(currentWord)
+    ) {
         spawnWordAnimation(currentWord, "wrong");
         currentWord = "";
         updateCurrentWord();
@@ -272,11 +281,21 @@ async function submitCurrentWord() {
     }
 
     // instant UI update
-    normalizedFoundWords.add(currentWord);
-    
+    if (isBonus) {
+        normalizedBonusWords.add(currentWord);
+    }
+    else {
+        normalizedFoundWords.add(currentWord);
+    }
+
     // Add temporary uppercase guess as display word
     const tempDisplayWord = currentWord;
-    foundWords.add(tempDisplayWord);
+
+    if (isBonus) {
+        foundBonusWords.add(tempDisplayWord);
+    } else {
+        foundWords.add(tempDisplayWord);
+    }
 
     renderFoundWords();
     updateProgress();
@@ -289,9 +308,14 @@ async function submitCurrentWord() {
     submitWord(sessionId, puzzle.id, submittedWord)
         .then(result => {
             if (result && result.success) {
-                // Swap temporary word for accented display word
-                foundWords.delete(tempDisplayWord);
-                foundWords.add(result.display);
+                if (isBonus) {
+                    foundBonusWords.delete(tempDisplayWord);
+                    foundBonusWords.add(result.display);
+                } else {
+                    foundWords.delete(tempDisplayWord);
+                    foundWords.add(result.display);
+                }
+
                 renderFoundWords();
             }
         })
@@ -369,11 +393,56 @@ function renderFoundWords() {
             wrapper.appendChild(wordsWrap);
             container.appendChild(wrapper);
         });
+
+    // Bonus words section
+    if (foundBonusWords.size > 0) {
+        const missingBonus = Math.max(0, puzzle.bonus_word_count - foundBonusWords.size);
+        const wrapper = document.createElement("div");
+        wrapper.className = "word-group";
+
+        const title = document.createElement("div");
+        title.className = "word-group-title";
+        title.textContent = `Palabras bonus (+${missingBonus} palabras faltantes)`;
+
+        const wordsWrap = document.createElement("div");
+        wordsWrap.className = "word-group-words";
+
+        [...foundBonusWords]
+            .sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }))
+            .forEach(word => {
+                const chip = document.createElement("div");
+                chip.className = "word-chip found bonus";
+                chip.textContent = word;
+
+                chip.addEventListener("click", () => {
+                    const rect = chip.getBoundingClientRect();
+                    showTooltip(word, rect);
+                });
+
+                wordsWrap.appendChild(chip);
+            });
+
+        wrapper.appendChild(title);
+        wrapper.appendChild(wordsWrap);
+        container.appendChild(wrapper);
+    }
 }
 
 function updateProgress() {
-    document.getElementById("progress").textContent =
-        `${normalizedFoundWords.size} / ${puzzle.word_count}`;
+    const normal = normalizedFoundWords.size;
+    const bonus = normalizedBonusWords.size;
+
+    const totalNormal = puzzle.word_count;
+    const totalBonus = puzzle.bonus_word_count || 0;
+
+    const text =
+        `${normal} / ${totalNormal}` +
+        (totalBonus > 0 ? ` (+${bonus}/${totalBonus} bonus)` : "");
+
+    document.querySelector("#progress .progress-text").textContent = text;
+
+    const ratio = totalNormal === 0 ? 0 : (normal / totalNormal) * 100;
+    document.querySelector("#progress .progress-bar").style.width = `${ratio}%`;
 }
 
 function spawnWordAnimation(text, type) {

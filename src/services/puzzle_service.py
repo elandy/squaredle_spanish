@@ -24,20 +24,24 @@ def _get_safe_puzzle_data(puzzle: Puzzle) -> dict:
     lengths = [len(w["normalized"]) for w in words]
     word_lengths = dict(Counter(lengths))
 
-    word_hashes = []
+    word_hashes = {}
+
     for w in words:
         normalized = w["normalized"]
         salted = f"{normalized}{puzzle.id}"
-        h = hashlib.sha256(salted.encode("utf-8")).hexdigest()
-        word_hashes.append(h)
+        hash = hashlib.sha256(salted.encode("utf-8")).hexdigest()
+        word_hashes[hash] = w.get("bonus", False)
 
     return {
         "id": puzzle.id,
         "size": pj.get("size", 4),
         "board": pj.get("board", []),
-        "word_count": pj.get("word_count", 0),
+
+        "word_count": sj.get("stats", {}).get("count", 0),
+        "bonus_word_count": sj.get("stats", {}).get("bonus_count", 0),
+
         "word_lengths": word_lengths,
-        "word_hashes": word_hashes,
+        "words": word_hashes,
     }
 
 
@@ -137,6 +141,11 @@ class PuzzleService:
                     "success": False,
                     "reason": "invalid_word"
                 }
+            bonus = False
+            for w in puzzle.solution_json["words"]:
+                if w["normalized"] == word:
+                    bonus = w.get("bonus", False)
+                    break
             existing = (
                 db.query(FoundWord)
                 .filter(
@@ -154,6 +163,7 @@ class PuzzleService:
                 session_id=session_id,
                 word=word,
                 found_at=datetime.now(UTC),
+                bonus=bonus,
             )
             db.add(found_word)
             session.last_seen = datetime.now(UTC),
@@ -213,17 +223,23 @@ class PuzzleService:
                 w["normalized"]: w["display"]
                 for w in puzzle.solution_json["words"]
             }
-            normalized_words = [w.word for w in found_words]
+            normalized_words = [w.word for w in found_words if not w.bonus]
+            normalized_bonus_words = [w.word for w in found_words if w.bonus]
+
             display_words = [solution_map[w] for w in normalized_words if w in solution_map]
+            display_bonus_words = [solution_map[w] for w in normalized_bonus_words if w in solution_map]
             return {
                 "session_id": session.id,
                 "puzzle_id": session.puzzle_id,
-                "found_words": len(found_words),
-                "total_words": puzzle.puzzle_json["word_count"],
-                "score": sum(len(w.word) - 3 for w in found_words),
-                "completed": len(found_words) == puzzle.puzzle_json["word_count"],
+                "found_words": len(normalized_words),
+                "total_words": puzzle.solution_json["stats"]["count"],
+                "score": sum(len(w) - 3 for w in normalized_words),
+                "completed": len(normalized_words) == puzzle.solution_json["stats"]["count"],
                 "words": normalized_words,
+                "bonus_words": normalized_bonus_words,
+                "total_bonus_words": puzzle.solution_json["stats"]["bonus_count"],
                 "display_words": display_words,
+                "display_bonus_words": display_bonus_words,
                 "username": session.player.username if session.player else None,
             }
 

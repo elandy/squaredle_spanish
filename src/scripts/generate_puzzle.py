@@ -4,6 +4,7 @@ from datetime import date
 from collections import Counter
 from pathlib import Path
 from statistics import mean
+from wordfreq import zipf_frequency
 
 from src.utils.normalize import normalize
 
@@ -11,11 +12,11 @@ from src.utils.normalize import normalize
 # ==========================================
 # CONFIG
 # ==========================================
-
+BONUS_ZIPF_THRESHOLD = 3
 SIZE = 4
 
-MIN_WORDS = 40
-MAX_WORDS = 140
+MIN_WORDS = 80
+MAX_WORDS = 1000
 
 LETTERS = (
     "EEEEEEEEEEEE"
@@ -162,14 +163,16 @@ def search(board, trie):
 # ANALYSIS
 # ==========================================
 
-def analyze(words):
-    lengths = [len(w) for w in words]
+def analyze(normal_words, bonus_words):
+    lengths = [len(w) for w in normal_words]
 
     return {
-        "count": len(words),
+        "count": len(normal_words),
+        "bonus_count": len(bonus_words),
         "avg_length": round(mean(lengths), 2),
         "max_length": max(lengths),
         "length_distribution": dict(Counter(lengths)),
+        "score": sum(len(w) - 3 for w in normal_words)
     }
 
 
@@ -177,8 +180,19 @@ def board_score(words):
     return sum(len(w) - 3 for w in words)
 
 
+_word_frequency_cache = {}
+
+def is_bonus_word(word: str) -> bool:
+    freq = _word_frequency_cache.get(word)
+
+    if freq is None:
+        freq = zipf_frequency(word.lower(), "es")
+        _word_frequency_cache[word] = freq
+
+    return freq < BONUS_ZIPF_THRESHOLD
+
 # ==========================================
-# CORE FUNCTION (THIS IS THE IMPORTANT PART)
+# CORE FUNCTION
 # ==========================================
 
 def generate_puzzle(board=None, puzzle_date: date | None = None):
@@ -193,6 +207,13 @@ def generate_puzzle(board=None, puzzle_date: date | None = None):
             board = generate_board()
             solutions = search(board, trie)
             words = set(solutions.keys())
+            normal_words = {
+                w
+                for w in words
+                if not is_bonus_word(w)
+            }
+
+            bonus_words = words - normal_words
 
             used = set()
             for data in solutions.values():
@@ -210,6 +231,13 @@ def generate_puzzle(board=None, puzzle_date: date | None = None):
 
         solutions = search(board, trie)
         words = set(solutions.keys())
+        normal_words = {
+            w
+            for w in words
+            if not is_bonus_word(w)
+        }
+
+        bonus_words = words - normal_words
 
         used = set()
         for data in solutions.values():
@@ -226,8 +254,8 @@ def generate_puzzle(board=None, puzzle_date: date | None = None):
     if not valid:
         raise RuntimeError("No valid puzzle found")
 
-    stats = analyze(words)
-    score = board_score(words)
+    stats = analyze(normal_words, bonus_words)
+    score = board_score(normal_words)
 
     # IMPORTANT CHANGE HERE
     if puzzle_date is None:
@@ -245,6 +273,7 @@ def generate_puzzle(board=None, puzzle_date: date | None = None):
                 {
                     "display": data["display"],
                     "normalized": data["normalized"],
+                    "bonus": is_bonus_word(data["normalized"]),
                 }
                 for data in solutions.values()
             ],
@@ -254,10 +283,7 @@ def generate_puzzle(board=None, puzzle_date: date | None = None):
             k: [[r, c] for r, c in v["path"]]
             for k, v in solutions.items()
         },
-        "stats": {
-            **stats,
-            "score": score,
-        },
+        "stats": stats,
     }
 
     daily_puzzle = {
