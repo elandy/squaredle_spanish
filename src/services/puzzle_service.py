@@ -21,7 +21,7 @@ def _get_safe_puzzle_data(puzzle: Puzzle) -> dict:
     sj = puzzle.solution_json
 
     words = sj.get("words", [])
-    lengths = [len(w["normalized"]) for w in words]
+    lengths = [len(w["normalized"]) for w in words if not w["bonus"]]
     word_lengths = dict(Counter(lengths))
 
     word_hashes = {}
