@@ -64,7 +64,7 @@ h1 {
 
 .progress-container {
     position: relative;
-    min-width: 220px; /* ensures text never collapses */
+    min-width: 120px;
     padding: 6px 10px;
     border-radius: 8px;
     background: #1f1f1f;
