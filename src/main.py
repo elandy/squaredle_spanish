@@ -1,7 +1,9 @@
 import os
 from datetime import datetime
+from typing import Annotated
+
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints
 from src.services.puzzle_service import PuzzleService
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
@@ -41,9 +43,18 @@ class SessionResponse(BaseModel):
     puzzle_id: str
     created_at: datetime
 
+Username = Annotated[
+    str,
+    StringConstraints(
+        min_length=4,
+        max_length=25,
+        pattern=r"^[A-Za-z0-9]+$",
+    ),
+]
+
 class CreatePlayerRequest(BaseModel):
     session_id: str
-    username: str
+    username: Username
 
 # ==========================================================
 # HEALTH

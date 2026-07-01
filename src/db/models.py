@@ -30,8 +30,11 @@ class PlayerSession(Base):
     last_seen: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     found_words = relationship("FoundWord", back_populates="session", cascade="all, delete-orphan")
+
     score: Mapped[int] = mapped_column(default=0)
     found_count: Mapped[int] = mapped_column(default=0)
+    bonus_score: Mapped[int] = mapped_column(default=0)
+    bonus_found_count: Mapped[int] = mapped_column(default=0)
 
     player_id: Mapped[str | None] = mapped_column(ForeignKey("players.id"), nullable=True)
     player: Mapped["Player | None"] = relationship(back_populates="sessions")

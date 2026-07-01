@@ -497,4 +497,5 @@ Pending features:
 * Cache word definitions to minimize API calls
 
 Pending fixes:
-* The definition modal sometimes goes out of the screen, making it impossible to read.
+* Already found words should be displayed as yellow in the game
+* Leaderboard is counting bonus words. It should only count non-bonus words.

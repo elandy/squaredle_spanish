@@ -14,6 +14,7 @@ let sessionId;
 
 let foundWords = new Set();
 let foundBonusWords = new Set();
+let score = 0;
 let normalizedFoundWords = new Set();
 let normalizedBonusWords = new Set();
 
@@ -93,6 +94,7 @@ async function loadProgress() {
     normalizedBonusWords = new Set(progress.bonus_words || []);
     foundWords = new Set(progress.display_words || []);
     foundBonusWords = new Set(progress.display_bonus_words || []);
+    score = progress.score || 0;
 
     updateProgress();
     renderFoundWords();
@@ -252,6 +254,10 @@ async function sha256(message) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+function calculateWordScore(word) {
+    return Math.max(1, word.length - 3);
+}
+
 async function submitCurrentWord() {
     if (!currentWord) return;
 
@@ -292,9 +298,10 @@ async function submitCurrentWord() {
     const tempDisplayWord = currentWord;
 
     if (isBonus) {
-        foundBonusWords.add(tempDisplayWord);
+        normalizedBonusWords.add(currentWord);
     } else {
-        foundWords.add(tempDisplayWord);
+        normalizedFoundWords.add(currentWord);
+        score += calculateWordScore(currentWord);
     }
 
     renderFoundWords();
@@ -429,19 +436,18 @@ function renderFoundWords() {
 }
 
 function updateProgress() {
-    const normal = normalizedFoundWords.size;
     const bonus = normalizedBonusWords.size;
 
-    const totalNormal = puzzle.word_count;
+    const totalScore = puzzle.total_score;
     const totalBonus = puzzle.bonus_word_count || 0;
 
     const text =
-        `${normal} / ${totalNormal}` +
+        `${score} / ${totalScore}` +
         (totalBonus > 0 ? ` (+${bonus}/${totalBonus} bonus)` : "");
 
     document.querySelector("#progress .progress-text").textContent = text;
 
-    const ratio = totalNormal === 0 ? 0 : (normal / totalNormal) * 100;
+    const ratio = totalScore === 0 ? 0 : (score / totalScore) * 100;
     document.querySelector("#progress .progress-bar").style.width = `${ratio}%`;
 }
 
@@ -468,32 +474,82 @@ function spawnWordAnimation(text, type) {
 // Leaderboard
 // ==========================================================
 
-function showLeaderboardModal(data) {
-    const modal = document.getElementById("leaderboard-modal");
-    const list = document.getElementById("leaderboard-list");
-    const dateEl = document.getElementById("leaderboard-date");
+let leaderboardData = null;
+let leaderboardMetric = "score";
+let includeBonus = false;
 
+function renderLeaderboard() {
+    const list = document.getElementById("leaderboard-list");
     list.innerHTML = "";
 
-    dateEl.textContent = data.date;
+    const key =
+        leaderboardMetric +
+        (includeBonus ? "_bonus" : "");
 
-    data.leaderboard.forEach((row, i) => {
+    leaderboardData.leaderboards[key].forEach((row, i) => {
+        const stats = row.stats;
+
+        const value =
+            leaderboardMetric === "score"
+                ? (includeBonus
+                    ? stats.score + stats.bonus_score
+                    : stats.score)
+                : (includeBonus
+                    ? stats.found_words + stats.bonus_found_words
+                    : stats.found_words);
+
+        const suffix =
+            leaderboardMetric === "score"
+                ? " pts"
+                : " palabras";
+
         const div = document.createElement("div");
-
         div.className = "word-chip";
         div.textContent =
-            `${i + 1}. ${row.username ?? "Anónimo"} - ${row.words_found}`;
+            `${i + 1}. ${row.username ?? "Anónimo"} — ${value}${suffix}`;
 
         list.appendChild(div);
     });
-
-    modal.classList.remove("hidden");
 }
+
+function setLeaderboardMetric(metric) {
+    leaderboardMetric = metric;
+
+    document
+        .querySelectorAll(".leaderboard-tabs button")
+        .forEach(btn => btn.classList.remove("active"));
+
+    document
+        .getElementById(`tab-${metric}`)
+        .classList.add("active");
+
+    renderLeaderboard();
+}
+
+function showLeaderboardModal(data) {
+    leaderboardData = data;
+
+    document.getElementById("leaderboard-date").textContent = data.date;
+
+    setLeaderboardMetric("score");
+
+    document.getElementById("leaderboard-modal").classList.remove("hidden");
+}
+
+document.getElementById("tab-score").onclick = () =>
+    setLeaderboardMetric("score");
+
+document.getElementById("tab-words").onclick = () =>
+    setLeaderboardMetric("words");
+
+document.getElementById("leaderboard-bonus").onchange = e => {
+    includeBonus = e.target.checked;
+    renderLeaderboard();
+};
 
 document.getElementById("close-leaderboard").onclick = () => {
     document.getElementById("leaderboard-modal").classList.add("hidden");
 };
-
 // ==========================================================
 // START
 // ==========================================================

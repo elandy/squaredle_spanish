@@ -15,7 +15,11 @@ export async function askUsername(sessionId) {
             if (!username) return;
 
             error.textContent = "";
-
+            if (!/^[A-Za-z0-9]{4,25}$/.test(username)) {
+                error.textContent =
+                    "El nombre debe tener entre 4 y 25 caracteres alfanuméricos.";
+                return;
+            }
             try {
                 const player = await createPlayer(sessionId, username);
 

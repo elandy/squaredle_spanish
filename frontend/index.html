@@ -67,10 +67,24 @@
 <div id="leaderboard-modal" class="modal hidden">
     <div class="modal-card">
         <div class="leaderboard-header">
-            <div class="leaderboard-title">Leaderboard</div>
+            <div class="leaderboard-title">Ranking</div>
             <div id="leaderboard-date"></div>
         </div>
+
+        <div class="leaderboard-controls">
+            <div class="leaderboard-tabs">
+                <button id="tab-score" class="active">Puntaje</button>
+                <button id="tab-words">Palabras</button>
+            </div>
+
+            <label class="leaderboard-bonus-toggle">
+                <span>Incluir bonus</span>
+                <input id="leaderboard-bonus" type="checkbox">
+            </label>
+        </div>
+
         <div id="leaderboard-list"></div>
+
         <button id="close-leaderboard">Cerrar</button>
     </div>
 </div>

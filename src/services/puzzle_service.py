@@ -39,6 +39,7 @@ def _get_safe_puzzle_data(puzzle: Puzzle) -> dict:
 
         "word_count": sj.get("stats", {}).get("count", 0),
         "bonus_word_count": sj.get("stats", {}).get("bonus_count", 0),
+        "total_score": sj.get("stats", {}).get("score", 0),
 
         "word_lengths": word_lengths,
         "words": word_hashes,
@@ -159,26 +160,27 @@ class PuzzleService:
                     "success": False,
                     "reason": "already_found"
                 }
+            score_added = calculate_word_score(word)
             found_word = FoundWord(
                 session_id=session_id,
                 word=word,
                 found_at=datetime.now(UTC),
                 bonus=bonus,
+                score=score_added,
             )
             db.add(found_word)
             session.last_seen = datetime.now(UTC),
+
+            if not bonus:
+                session.score += score_added
+                session.found_count += 1
+            else:
+                session.bonus_score += score_added
+                session.bonus_found_count += 1
+
             db.commit()
-
-            score_added = calculate_word_score(word)
-
-            session.score += score_added
-            session.found_count += 1
-            session.last_seen = datetime.now(UTC)
-
-            completion = round(
-                session.found_count * 100 / len(valid_words),
-                2
-            )
+            db.refresh(session)
+            completion = round(session.found_count * 100 / len(valid_words), 2)
             display_word = next((w["display"] for w in puzzle.solution_json["words"] if w["normalized"] == word), None)
             return {
                 "success": True,
@@ -195,9 +197,7 @@ class PuzzleService:
         with SessionLocal() as db:
             session = (
                 db.query(PlayerSession)
-                .filter(
-                    PlayerSession.id == session_id
-                )
+                .filter(PlayerSession.id == session_id)
                 .first()
             )
 
@@ -206,41 +206,56 @@ class PuzzleService:
 
             puzzle = (
                 db.query(Puzzle)
-                .filter(
-                    Puzzle.id == session.puzzle_id
-                )
+                .filter(Puzzle.id == session.puzzle_id)
                 .first()
             )
 
             found_words = (
                 db.query(FoundWord)
-                .filter(
-                    FoundWord.session_id == session_id
-                )
+                .filter(FoundWord.session_id == session_id)
                 .all()
             )
+
             solution_map = {
                 w["normalized"]: w["display"]
                 for w in puzzle.solution_json["words"]
             }
-            normalized_words = [w.word for w in found_words if not w.bonus]
-            normalized_bonus_words = [w.word for w in found_words if w.bonus]
 
-            display_words = [solution_map[w] for w in normalized_words if w in solution_map]
-            display_bonus_words = [solution_map[w] for w in normalized_bonus_words if w in solution_map]
+            found_words_norm = [w.word for w in found_words if not w.bonus]
+            found_bonus_words_norm = [w.word for w in found_words if w.bonus]
+
+            found_words_display = [
+                solution_map[w]
+                for w in found_words_norm
+                if w in solution_map
+            ]
+            found_bonus_words_display = [
+                solution_map[w]
+                for w in found_bonus_words_norm
+                if w in solution_map
+            ]
+
             return {
+                # session info
                 "session_id": session.id,
-                "puzzle_id": session.puzzle_id,
-                "found_words": len(normalized_words),
-                "total_words": puzzle.solution_json["stats"].get("count", 0),
-                "score": sum(len(w) - 3 for w in normalized_words),
-                "completed": len(normalized_words) == puzzle.solution_json["stats"].get("count", 0),
-                "words": normalized_words,
-                "bonus_words": normalized_bonus_words,
-                "total_bonus_words": puzzle.solution_json["stats"].get("bonus_count", 0),
-                "display_words": display_words,
-                "display_bonus_words": display_bonus_words,
                 "username": session.player.username if session.player else None,
+
+                # player stats
+                "found_words": session.found_count,
+                "bonus_found_words": session.bonus_found_count,
+                "score": session.score,
+                "bonus_score": session.bonus_score,
+                "completed": session.found_count == puzzle.solution_json["stats"].get("count", 0),
+                "words": found_words_norm,
+                "bonus_words": found_bonus_words_norm,
+                "display_words": found_words_display,
+                "display_bonus_words": found_bonus_words_display,
+
+                # puzzle stats
+                "puzzle_id": session.puzzle_id,
+                "total_words": puzzle.solution_json["stats"].get("count", 0),
+                "total_score": puzzle.solution_json["stats"].get("score", 0),
+                "total_bonus_words": puzzle.solution_json["stats"].get("bonus_count", 0),
             }
 
     def get_found_words(self, session_id):
@@ -264,21 +279,20 @@ class PuzzleService:
                 )
                 .first()
             )
-            if not puzzle: return { 'date': today_date.isoformat(), 'leaderboard': []}
+            if not puzzle: return { 'date': today_date.isoformat(), 'leaderboards': []}
             leaderboard = self.get_leaderboard(puzzle.id)
-            return {'date': today_date.isoformat(), 'leaderboard': leaderboard}
+            return {'date': today_date.isoformat(), 'leaderboards': leaderboard}
 
     def get_leaderboard(self, puzzle_id: str):
         with SessionLocal() as db:
-            results = (
+            rows = (
                 db.query(
                     PlayerSession.id.label("session_id"),
                     Player.username.label("username"),
-                    func.count(FoundWord.id).label("words_found"),
-                )
-                .outerjoin(
-                    FoundWord,
-                    FoundWord.session_id == PlayerSession.id,
+                    PlayerSession.found_count.label("found_words"),
+                    PlayerSession.bonus_found_count.label("bonus_found_words"),
+                    PlayerSession.score.label("score"),
+                    PlayerSession.bonus_score.label("bonus_score"),
                 )
                 .outerjoin(
                     Player,
@@ -287,30 +301,72 @@ class PuzzleService:
                 .filter(
                     PlayerSession.puzzle_id == puzzle_id
                 )
-                .group_by(
-                    PlayerSession.id,
-                    Player.username,
-                )
-                .order_by(
-                    func.count(FoundWord.id).desc()
-                )
-                .limit(100)
                 .all()
             )
 
-            return [
+            players = [
                 {
                     "session_id": row.session_id,
                     "username": row.username,
-                    "words_found": row.words_found,
+                    "stats": {
+                        "found_words": row.found_words,
+                        "bonus_found_words": row.bonus_found_words,
+                        "score": row.score,
+                        "bonus_score": row.bonus_score,
+                    },
                 }
-                for row in results
+                for row in rows
             ]
+
+            return {
+                "score": sorted(
+                    players,
+                    key=lambda p: (
+                        p["stats"]["score"],
+                        p["stats"]["found_words"],
+                    ),
+                    reverse=True,
+                )[:100],
+
+                "score_bonus": sorted(
+                    players,
+                    key=lambda p: (
+                        p["stats"]["score"] + p["stats"]["bonus_score"],
+                        p["stats"]["found_words"] + p["stats"]["bonus_found_words"],
+                    ),
+                    reverse=True,
+                )[:100],
+
+                "words": sorted(
+                    players,
+                    key=lambda p: (
+                        p["stats"]["found_words"],
+                        p["stats"]["score"],
+                    ),
+                    reverse=True,
+                )[:100],
+
+                "words_bonus": sorted(
+                    players,
+                    key=lambda p: (
+                        p["stats"]["found_words"] + p["stats"]["bonus_found_words"],
+                        p["stats"]["score"] + p["stats"]["bonus_score"],
+                    ),
+                    reverse=True,
+                )[:100],
+            }
 
     def create_player(self, session_id: str, username: str) -> Player:
         username = username.strip().lower()
+
         if not username:
             raise ValueError("Username cannot be empty")
+        if len(username) < 4:
+            raise ValueError("Username cannot be shorter than 4 characters")
+        if len(username) > 25:
+            raise ValueError("Username cannot be longer than 25 characters")
+        if not username.isalnum():
+            raise ValueError("Username can only contain letters and numbers")
 
         with SessionLocal() as db:
             session = (
