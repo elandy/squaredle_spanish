@@ -488,8 +488,6 @@ If the RAE service is unavailable, gameplay is unaffected. Dictionary lookups ar
 
 Pending features:
 * Ranking by:
-  * Score
-  * Bonus words found
   * Speed
   * Current leaderboard is limited to 100 entries. Improve current user display in the leaderboard.
 * Victory screen
@@ -498,4 +496,3 @@ Pending features:
 
 Pending fixes:
 * Already found words should be displayed as yellow in the game
-* Leaderboard is counting bonus words. It should only count non-bonus words.
