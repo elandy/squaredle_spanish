@@ -1,0 +1,81 @@
+import { spawnWordAnimation } from "./animation.js";
+import { submitWord } from "./api.js";
+import { playBuffer, correctBuffer, wrongBuffer } from "./audio.js";
+import { renderFoundWords } from "./foundWords.js";
+import { updateProgress } from "./progressUI.js";
+import { state } from "./state.js";
+import { updateCurrentWord } from "./selection.js";
+
+async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function calculateWordScore(word) {
+    return Math.max(1, word.length - 3);
+}
+
+export async function submitCurrentWord() {
+    if (!state.currentWord) return;
+
+    const submittedWord = state.currentWord;
+    const wordWithSalt = submittedWord + state.puzzle.id;
+    const wordHash = await sha256(wordWithSalt);
+    const isValid = wordHash in state.puzzle.words;
+    const isBonus = state.puzzle.words[wordHash];
+
+    if (!isValid) {
+        playBuffer(wrongBuffer);
+        spawnWordAnimation(submittedWord, "wrong");
+        state.currentWord = "";
+        updateCurrentWord();
+        return;
+    }
+
+    if (
+        state.normalizedFoundWords.has(submittedWord) ||
+        state.normalizedBonusWords.has(submittedWord)
+    ) {
+        spawnWordAnimation(submittedWord, "wrong");
+        state.currentWord = "";
+        updateCurrentWord();
+        return;
+    }
+
+    if (isBonus) {
+        state.normalizedBonusWords.add(submittedWord);
+        state.foundBonusWords.add(submittedWord);
+    } else {
+        state.normalizedFoundWords.add(submittedWord);
+        state.foundWords.add(submittedWord);
+        state.score += calculateWordScore(submittedWord);
+    }
+
+    renderFoundWords();
+    updateProgress();
+    spawnWordAnimation(submittedWord, "correct");
+    playBuffer(correctBuffer);
+
+    submitWord(state.sessionId, state.puzzle.id, submittedWord)
+        .then(result => {
+            if (result?.success) {
+                if (isBonus) {
+                    state.foundBonusWords.delete(submittedWord);
+                    state.foundBonusWords.add(result.display);
+                } else {
+                    state.foundWords.delete(submittedWord);
+                    state.foundWords.add(result.display);
+                }
+
+                renderFoundWords();
+            }
+        })
+        .catch(error => {
+            console.error("submit failed", error);
+        });
+
+    state.currentWord = "";
+    updateCurrentWord();
+}
