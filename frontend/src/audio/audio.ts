@@ -5,6 +5,7 @@ let muted: boolean = false;
 let letterBuffer: AudioBuffer;
 let correctBuffer: AudioBuffer;
 let wrongBuffer: AudioBuffer;
+let foundBuffer: AudioBuffer;
 
 export function isMuted() {
     return muted;
@@ -27,6 +28,7 @@ async function loadSound(url: string) {
 correctBuffer = await loadSound("/assets/sounds/correct.mp3");
 wrongBuffer = await loadSound("/assets/sounds/wrong.mp3");
 letterBuffer = await loadSound("/assets/sounds/letter.mp3");
+foundBuffer = await loadSound("/assets/sounds/found.mp3");
 
 export function playBuffer(buffer: AudioBuffer, playbackRate = 1) {
     if (muted) {return;}
@@ -48,4 +50,4 @@ export function playLetterSound(index: number) {
     playBuffer(letterBuffer, rate);
 }
 
-export { correctBuffer, wrongBuffer }
+export { correctBuffer, wrongBuffer, foundBuffer }

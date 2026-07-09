@@ -1,10 +1,11 @@
 import { spawnWordAnimation } from "../ui/animation.js";
 import { submitWord } from "../services/api";
-import { playBuffer, correctBuffer, wrongBuffer } from "../audio/audio.js";
+import {playBuffer, correctBuffer, wrongBuffer, foundBuffer} from "../audio/audio.js";
 import { renderFoundWords } from "../ui/foundWords.js";
 import { updateProgress } from "../ui/progressUI.js";
 import { state } from "./state";
 import { updateCurrentWord } from "./selection";
+import {showVictoryModal} from "../ui/victory.ts";
 
 async function sha256(message: string) {
     const msgBuffer = new TextEncoder().encode(message);
@@ -41,7 +42,8 @@ export async function submitCurrentWord() {
         state.normalizedFoundWords.has(submittedWord) ||
         state.normalizedBonusWords.has(submittedWord)
     ) {
-        spawnWordAnimation(submittedWord, "wrong");
+        playBuffer(foundBuffer);
+        spawnWordAnimation(submittedWord, "found");
         state.currentWord = "";
         updateCurrentWord();
         return;
@@ -60,6 +62,12 @@ export async function submitCurrentWord() {
     updateProgress();
     spawnWordAnimation(submittedWord, "correct");
     playBuffer(correctBuffer);
+    if (
+        !isBonus &&
+        state.normalizedFoundWords.size === state.puzzle.word_count
+    ) {
+        showVictoryModal();
+    }
 
     submitWord(state.sessionId, state.puzzle.id, submittedWord)
         .then(result => {
