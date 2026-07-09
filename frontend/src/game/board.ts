@@ -1,13 +1,17 @@
-import { updateProgress } from "./progressUI.js";
-import { state } from "./state.js";
+import { updateProgress } from "../ui/progressUI.js";
+import { state } from "./state";
 import {
     startSelection,
     handlePointerMove,
     finishSelection
-} from "./selection.js";
+} from "./selection";
 
 export function renderBoard() {
-    const board = document.getElementById("board");
+    if (!state.puzzle) {
+        throw new Error("Cannot render board without puzzle");
+    }
+
+    const board = document.getElementById("board")!;
     board.innerHTML = "";
 
     board.style.gridTemplateColumns =
@@ -22,8 +26,8 @@ export function renderBoard() {
 
             cell.textContent = state.puzzle.board[row][col];
 
-            cell.dataset.row = row;
-            cell.dataset.col = col;
+            cell.dataset.row = String(row);
+            cell.dataset.col = String(col);
             cell.dataset.letter = state.puzzle.board[row][col];
 
             cell.addEventListener("pointerdown", startSelection);

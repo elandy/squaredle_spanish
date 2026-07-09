@@ -1,6 +1,6 @@
-import { isMuted, toggleMute } from "./audio.js";
+import { isMuted, toggleMute } from "./audio";
 
-const muteBtn = document.getElementById("mute-btn");
+const muteBtn = document.getElementById("mute-btn") as HTMLButtonElement;
 
 export function updateMuteButton() {
     muteBtn.textContent = isMuted()

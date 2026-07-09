@@ -1,4 +1,4 @@
-export function spawnWordAnimation(text, type) {
+export function spawnWordAnimation(text: string, type: string) {
     const el = document.createElement("div");
 
     el.textContent = text;

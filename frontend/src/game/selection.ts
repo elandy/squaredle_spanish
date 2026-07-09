@@ -1,18 +1,18 @@
 import { submitCurrentWord } from "./wordSubmission.js";
-import { playLetterSound } from "./audio.js";
-import { state } from "./state.js";
+import { playLetterSound } from "../audio/audio.js";
+import { state } from "./state";
 
 export function updateCurrentWord() {
-    const el = document.getElementById("current-word");
+    const el = document.getElementById("current-word")!;
     el.textContent = state.currentWord;
     el.classList.remove("valid", "invalid");
 }
 
-export function startSelection(event) {
+export function startSelection(event: PointerEvent) {
     clearSelection();
     state.dragging = true;
-
-    const cell = event.target.closest(".cell");
+    const target = event.target as HTMLElement;
+    const cell = target.closest<HTMLElement>(".cell");
     addCell(cell);
 }
 
@@ -29,7 +29,7 @@ function clearSelection() {
     state.selectedCells = [];
 }
 
-export function handlePointerMove(event) {
+export function handlePointerMove(event: PointerEvent) {
     if (!state.dragging) return;
 
     const element = document.elementFromPoint(
@@ -38,14 +38,20 @@ export function handlePointerMove(event) {
     );
 
     const cell = element?.closest(".cell");
-    if (!cell) return;
+    if (!(cell instanceof HTMLElement)) {
+        return;
+    }
 
     if (!cursorNearCenter(cell, event.clientX, event.clientY)) return;
 
     addCell(cell);
 }
 
-function cursorNearCenter(cell, x, y) {
+function cursorNearCenter(
+    cell: HTMLElement,
+    x: number,
+    y: number
+) {
     const rect = cell.getBoundingClientRect();
 
     const cx = rect.left + rect.width / 2;
@@ -57,7 +63,7 @@ function cursorNearCenter(cell, x, y) {
     return Math.sqrt(dx * dx + dy * dy) < rect.width * 0.35;
 }
 
-function addCell(cell) {
+function addCell(cell: HTMLElement | null) {
     if (!cell) return;
 
     const existingIndex = state.selectedCells.indexOf(cell);
@@ -65,7 +71,9 @@ function addCell(cell) {
     if (existingIndex !== -1) {
         if (existingIndex === state.selectedCells.length - 2) {
             const removed = state.selectedCells.pop();
-            removed.classList.remove("selected");
+            if (removed) {
+                removed.classList.remove("selected");
+            }
 
             state.currentWord = state.currentWord.slice(0, -1);
             updateCurrentWord();
@@ -87,11 +95,14 @@ function addCell(cell) {
     playLetterSound(state.selectedCells.length);
 }
 
-function isAdjacent(a, b) {
-    const ar = +a.dataset.row;
-    const ac = +a.dataset.col;
-    const br = +b.dataset.row;
-    const bc = +b.dataset.col;
+function isAdjacent(
+    a: HTMLElement,
+    b: HTMLElement
+) {
+    const ar = +(a.dataset.row!)
+    const ac = +(a.dataset.col!)
+    const br = +(b.dataset.row!)
+    const bc = +(b.dataset.col!)
 
     return Math.abs(ar - br) <= 1 &&
         Math.abs(ac - bc) <= 1 &&

@@ -1,10 +1,10 @@
-import { fetchDefinition } from "./api.js";
+import { fetchDefinition } from "../services/api";
 
 function getTooltip() {
-    return document.getElementById("definition-tooltip");
+    return document.getElementById("definition-tooltip") as HTMLDivElement;
 }
 
-export function showTooltip(word, rect) {
+export function showTooltip(word: string, rect: DOMRect) {
     const tooltip = getTooltip();
 
     tooltip.textContent = "Cargando...";
@@ -22,7 +22,7 @@ export function showTooltip(word, rect) {
         title.textContent = data.word;
         tooltip.appendChild(title);
 
-        data.definitions.forEach(definition => {
+        data.definitions.forEach((definition: string ) => {
             const item = document.createElement("div");
             item.className = "tooltip-definition";
             item.textContent = definition;

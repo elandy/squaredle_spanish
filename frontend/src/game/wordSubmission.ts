@@ -1,23 +1,26 @@
-import { spawnWordAnimation } from "./animation.js";
-import { submitWord } from "./api.js";
-import { playBuffer, correctBuffer, wrongBuffer } from "./audio.js";
-import { renderFoundWords } from "./foundWords.js";
-import { updateProgress } from "./progressUI.js";
-import { state } from "./state.js";
-import { updateCurrentWord } from "./selection.js";
+import { spawnWordAnimation } from "../ui/animation.js";
+import { submitWord } from "../services/api";
+import { playBuffer, correctBuffer, wrongBuffer } from "../audio/audio.js";
+import { renderFoundWords } from "../ui/foundWords.js";
+import { updateProgress } from "../ui/progressUI.js";
+import { state } from "./state";
+import { updateCurrentWord } from "./selection";
 
-async function sha256(message) {
+async function sha256(message: string) {
     const msgBuffer = new TextEncoder().encode(message);
     const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-function calculateWordScore(word) {
+function calculateWordScore(word: string) {
     return Math.max(1, word.length - 3);
 }
 
 export async function submitCurrentWord() {
+    if (!state.puzzle || !state.sessionId) {
+        throw new Error("Game is not initialized");
+    }
     if (!state.currentWord) return;
 
     const submittedWord = state.currentWord;
@@ -60,17 +63,17 @@ export async function submitCurrentWord() {
 
     submitWord(state.sessionId, state.puzzle.id, submittedWord)
         .then(result => {
-            if (result?.success) {
-                if (isBonus) {
-                    state.foundBonusWords.delete(submittedWord);
-                    state.foundBonusWords.add(result.display);
-                } else {
-                    state.foundWords.delete(submittedWord);
-                    state.foundWords.add(result.display);
-                }
-
-                renderFoundWords();
+            if (!result.success) {
+                return;
             }
+            if (isBonus) {
+                state.foundBonusWords.delete(submittedWord);
+                state.foundBonusWords.add(result.display);
+            } else {
+                state.foundWords.delete(submittedWord);
+                state.foundWords.add(result.display);
+            }
+            renderFoundWords();
         })
         .catch(error => {
             console.error("submit failed", error);

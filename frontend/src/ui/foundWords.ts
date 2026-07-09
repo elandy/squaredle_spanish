@@ -1,11 +1,16 @@
 import { showTooltip } from "./tooltip.js";
-import { state } from "./state.js";
+import { state } from "../game/state";
+import { WordGroup } from "../types/game";
 
 export function renderFoundWords() {
-    const container = document.getElementById("found-words");
+    if (!state.puzzle) {
+        throw new Error("Puzzle not initialized");
+    }
+
+    const container = document.getElementById("found-words") as HTMLDivElement;
     container.innerHTML = "";
 
-    const groups = {};
+    const groups: Record<number, WordGroup> = {};
 
     for (const [lenStr, total] of Object.entries(state.puzzle.word_lengths || {})) {
         const len = Number(lenStr);
@@ -51,7 +56,7 @@ export function renderFoundWords() {
                     chip.className = "word-chip found";
                     chip.textContent = word;
                     chip.addEventListener("click", () => {
-                        const rect = chip.getBoundingClientRect();
+                        const rect: DOMRect = chip.getBoundingClientRect();
                         showTooltip(word, rect);
                     });
                     wordsWrap.appendChild(chip);

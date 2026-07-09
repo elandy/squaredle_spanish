@@ -1,11 +1,11 @@
-import { getTodayPuzzle, createSession, getProgress } from "./api.js";
+import { getTodayPuzzle, createSession, getProgress } from "../services/api.js";
 import { renderBoard } from "./board.js";
 import { askUsername } from "./username.js";
-import { updateProgress } from "./progressUI.js";
-import { renderFoundWords } from "./foundWords.js";
-import { setGameState } from "./state.js";
+import { updateProgress } from "../ui/progressUI.js";
+import { renderFoundWords } from "../ui/foundWords.js";
+import { setGameState } from "./state.ts";
 
-async function loadProgress(sessionId) {
+async function loadProgress(sessionId: string) {
     const progress = await getProgress(sessionId);
 
     setGameState({
@@ -20,12 +20,16 @@ async function loadProgress(sessionId) {
     renderFoundWords();
 
     const username = progress.username || "Anonimo";
-    document.getElementById("player-info").textContent = username;
+    const playerInfo = document.getElementById("player-info");
+
+    if (playerInfo) {
+        playerInfo.textContent = username;
+    }
 }
 
 export async function init() {
     const puzzle = await getTodayPuzzle();
-    let sessionId = null;
+    let sessionId: string | null = null;
     const savedSession = localStorage.getItem("session_id");
     const savedPuzzle = localStorage.getItem("session_puzzle_id");
 
@@ -47,6 +51,9 @@ export async function init() {
 
     if (!playerId) {
         await askUsername(sessionId);
+    }
+    if (!sessionId) {
+        throw new Error("Session ID was not created");
     }
 
     setGameState({ puzzle, sessionId });

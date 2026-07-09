@@ -12,3 +12,4 @@ wheels/
 
 # Generated job workspaces
 data/jobs/
+/frontend/node_modules/

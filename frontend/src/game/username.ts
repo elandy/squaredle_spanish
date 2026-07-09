@@ -1,11 +1,12 @@
-import { createPlayer } from "./api.js";
+import { createPlayer } from "../services/api";
+import {ApiError} from "../types/api.ts";
 
-export async function askUsername(sessionId) {
+export async function askUsername(sessionId: string) {
     return new Promise((resolve) => {
-        const modal = document.getElementById("username-modal");
-        const input = document.getElementById("username-input");
-        const button = document.getElementById("username-submit");
-        const error = document.getElementById("username-error");
+        const modal = document.getElementById("username-modal") as HTMLDivElement;
+        const input = document.getElementById("username-input") as HTMLInputElement;
+        const button = document.getElementById("username-submit") as HTMLButtonElement;
+        const error = document.getElementById("username-error") as HTMLDivElement;
 
         modal.classList.remove("hidden");
         input.focus();
@@ -30,7 +31,8 @@ export async function askUsername(sessionId) {
 
                 resolve(player);
             } catch (err) {
-                error.textContent = err.detail ?? "Nombre no disponible";
+                const apiError = err as ApiError;
+                error.textContent = apiError.detail ?? "Nombre no disponible";
             }
         }
 
