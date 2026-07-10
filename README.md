@@ -489,6 +489,7 @@ If the RAE service is unavailable, gameplay is unaffected. Dictionary lookups ar
 Pending features:
 * Ranking by:
   * Speed
+    * For this we need to add a mechanism for estimating play time based on /submit-word calls
   * Current leaderboard is limited to 100 entries. Improve current user display in the leaderboard.
 * Leaderboard history
 * Cache word definitions to minimize API calls

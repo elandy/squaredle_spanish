@@ -5,17 +5,12 @@
     "moduleResolution": "bundler",
 
     "strict": true,
-
-    "allowJs": true,
-    "checkJs": false,
-
     "isolatedModules": true,
 
     "noEmit": true,
-    "allowImportingTsExtensions": true,
     "jsx": "react-jsx"
 
   },
 
-  "include": ["src"]
+  "include": ["src", "vite.config.ts"]
 }
