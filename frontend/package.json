@@ -10,7 +10,8 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^5.2.0",
     "typescript": "^7.0.2",
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "wrangler": "^4.110.0"
   },
   "dependencies": {
     "react": "^19.2.7",
