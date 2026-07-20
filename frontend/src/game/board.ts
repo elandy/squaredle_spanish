@@ -6,6 +6,7 @@ import {
     finishSelection
 } from "./selection";
 import {updateBoardExhaustion} from "./boardExhaustion";
+import {updateBoardHints} from "./boardHints";
 
 export function renderBoard() {
     if (!state.puzzle) {
@@ -41,4 +42,5 @@ export function renderBoard() {
 
     updateProgress();
     updateBoardExhaustion();
+    updateBoardHints();
 }

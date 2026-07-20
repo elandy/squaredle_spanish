@@ -6,6 +6,7 @@ import { renderFoundWords } from "../ui/foundWords.js";
 import { setGameState } from "./state";
 import {Puzzle} from "../types/api";
 import {sha256} from "../utils/hash";
+import {updateBoardHints} from "./boardHints";
 
 function buildCellUsage(puzzle: Puzzle): Map<string, Set<string>> {
     const usage = new Map<string, Set<string>>();
@@ -44,7 +45,7 @@ async function loadProgress(sessionId: string, puzzle: Puzzle) {
 
     updateProgress();
     renderFoundWords();
-
+    updateBoardHints();
     const username = progress.username || "Anonimo";
     const playerInfo = document.getElementById("player-info");
 

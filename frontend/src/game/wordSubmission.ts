@@ -8,6 +8,7 @@ import { updateCurrentWord } from "./selection";
 import {showVictoryModal} from "../ui/victory";
 import {sha256} from "../utils/hash";
 import {updateBoardExhaustion} from "./boardExhaustion";
+import {updateBoardHints} from "./boardHints";
 
 function calculateWordScore(word: string) {
     return Math.max(1, word.length - 3);
@@ -56,6 +57,7 @@ export async function submitCurrentWord() {
         state.score += calculateWordScore(submittedWord);
         state.foundWordHashes.add(wordHash);
         updateBoardExhaustion();
+        updateBoardHints();
     }
 
     renderFoundWords();
