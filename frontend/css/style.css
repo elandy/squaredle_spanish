@@ -597,3 +597,7 @@ h1 {
     font-size: 4rem;
     animation: trophyBounce 1s infinite;
 }
+.cell.exhausted {
+    opacity: .35;
+    transition: opacity .2s;
+}

@@ -1,10 +1,11 @@
-import { updateProgress } from "../ui/progressUI.js";
+import { updateProgress } from "../ui/progressUI";
 import { state } from "./state";
 import {
     startSelection,
     handlePointerMove,
     finishSelection
 } from "./selection";
+import {updateBoardExhaustion} from "./boardExhaustion";
 
 export function renderBoard() {
     if (!state.puzzle) {
@@ -39,4 +40,5 @@ export function renderBoard() {
     window.addEventListener("pointerup", finishSelection);
 
     updateProgress();
+    updateBoardExhaustion();
 }

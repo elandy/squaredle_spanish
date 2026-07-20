@@ -16,6 +16,8 @@ export interface GameState {
     currentWord: string;
     selectedCells: HTMLElement[];
     dragging: boolean;
+    cellUsage: Map<string, Set<string>>;
+    foundWordHashes: Set<string>;
 }
 
 export interface WordGroup {

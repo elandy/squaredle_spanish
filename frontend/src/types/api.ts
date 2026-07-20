@@ -1,3 +1,8 @@
+export interface WordInfo {
+    bonus: boolean;
+    cells: [number, number][];
+}
+
 export interface Puzzle {
     id: string;
     size: number;
@@ -6,7 +11,7 @@ export interface Puzzle {
     bonus_word_count: number;
     total_score: number;
     word_lengths: Record<string, number>;
-    words: Record<string, boolean>;
+    words: Record<string, WordInfo>;
 }
 
 export interface Session {

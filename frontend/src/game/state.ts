@@ -15,7 +15,10 @@ export const state: GameState = {
     currentWord: "",
 
     selectedCells: [],
-    dragging: false
+    dragging: false,
+
+    cellUsage: new Map(),
+    foundWordHashes: new Set(),
 };
 
 export function setGameState(updates: Partial<GameState>) {

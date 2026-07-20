@@ -21,7 +21,13 @@ def _get_safe_puzzle_data(puzzle: Puzzle) -> dict:
     sj = puzzle.solution_json
 
     words = sj.get("words", [])
-    lengths = [len(w["normalized"]) for w in words if not w["bonus"]]
+    paths = sj.get("paths", {})
+
+    lengths = [
+        len(w["normalized"])
+        for w in words
+        if not w["bonus"]
+    ]
     word_lengths = dict(Counter(lengths))
 
     word_hashes = {}
@@ -30,7 +36,11 @@ def _get_safe_puzzle_data(puzzle: Puzzle) -> dict:
         normalized = w["normalized"]
         salted = f"{normalized}{puzzle.id}"
         hash = hashlib.sha256(salted.encode("utf-8")).hexdigest()
-        word_hashes[hash] = w.get("bonus", False)
+
+        word_hashes[hash] = {
+            "bonus": w.get("bonus", False),
+            "cells": paths.get(normalized, [])
+        }
 
     return {
         "id": puzzle.id,

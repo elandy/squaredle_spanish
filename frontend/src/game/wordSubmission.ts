@@ -1,18 +1,13 @@
-import { spawnWordAnimation } from "../ui/animation.js";
+import { spawnWordAnimation } from "../ui/animation";
 import { submitWord } from "../services/api";
-import {playBuffer, correctBuffer, wrongBuffer, foundBuffer} from "../audio/audio.js";
-import { renderFoundWords } from "../ui/foundWords.js";
-import { updateProgress } from "../ui/progressUI.js";
+import {playBuffer, correctBuffer, wrongBuffer, foundBuffer} from "../audio/audio";
+import { renderFoundWords } from "../ui/foundWords";
+import { updateProgress } from "../ui/progressUI";
 import { state } from "./state";
 import { updateCurrentWord } from "./selection";
-import {showVictoryModal} from "../ui/victory.ts";
-
-async function sha256(message: string) {
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-}
+import {showVictoryModal} from "../ui/victory";
+import {sha256} from "../utils/hash";
+import {updateBoardExhaustion} from "./boardExhaustion";
 
 function calculateWordScore(word: string) {
     return Math.max(1, word.length - 3);
@@ -24,11 +19,14 @@ export async function submitCurrentWord() {
     }
     if (!state.currentWord) return;
 
+
     const submittedWord = state.currentWord;
     const wordWithSalt = submittedWord + state.puzzle.id;
     const wordHash = await sha256(wordWithSalt);
-    const isValid = wordHash in state.puzzle.words;
-    const isBonus = state.puzzle.words[wordHash];
+    const wordInfo = state.puzzle.words[wordHash];
+
+    const isValid = wordInfo !== undefined;
+    const isBonus = wordInfo?.bonus ?? false;
 
     if (!isValid) {
         playBuffer(wrongBuffer);
@@ -56,6 +54,8 @@ export async function submitCurrentWord() {
         state.normalizedFoundWords.add(submittedWord);
         state.foundWords.add(submittedWord);
         state.score += calculateWordScore(submittedWord);
+        state.foundWordHashes.add(wordHash);
+        updateBoardExhaustion();
     }
 
     renderFoundWords();
