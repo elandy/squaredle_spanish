@@ -492,4 +492,31 @@ Pending features:
     * For this we need to add a mechanism for estimating play time based on /submit-word calls
   * Current leaderboard is limited to 100 entries. Improve current user display in the leaderboard.
 * Leaderboard history
-* Cache word definitions to minimize API calls
+
+### Personal statistics:
+
+A page that shows something like:
+
+* Played: 48 days
+* Completed: 45
+* Completion rate: 94%
+* Average score: 87
+* Average solve time: 1:30:00 (this should be done after time estimation is implemented)
+* Fastest solve: 1:20:00
+* Longest streak: 10 days
+* Current streak: 10 days
+* Words found: 1280
+* Bonus words found: 521
+* Total points: 2578
+
+### Extra puzzles
+
+* Daily express 3x3
+* Weekly puzzle (maybe 5x5 or bigger)
+
+### Performance and other improvements
+
+* Cache word definitions to minimize API calls (can be done in memory since the daily dictionary is small)
+* Obtain a proper domain name (maybe squaredle.ar)
+* Ranking cache (invalidate with submit)
+* BG music
