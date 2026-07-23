@@ -97,3 +97,19 @@ export type LeaderboardKey =
     | "score_bonus"
     | "words"
     | "words_bonus";
+
+export interface PlayerStatistics {
+    played: number;
+    completed: number;
+    completion_rate: number;
+
+    average_score: number;
+
+    words_found: number;
+    bonus_words_found: number;
+
+    total_points: number;
+
+    longest_streak: number;
+    current_streak: number;
+}

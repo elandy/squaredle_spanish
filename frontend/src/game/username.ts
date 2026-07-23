@@ -1,5 +1,5 @@
 import { createPlayer } from "../services/api";
-import {ApiError} from "../types/api.ts";
+import {ApiError} from "../types/api";
 
 export async function askUsername(sessionId: string) {
     return new Promise((resolve) => {

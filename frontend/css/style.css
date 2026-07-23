@@ -1,14 +1,44 @@
+/* ==========================================
+   Theme matched to the game banner artwork:
+   deep maroon frames, cream parchment panels,
+   gold rivets, glowing purple gem accents.
+   No gradients on UI chrome, flat colors only
+   (gems keep a soft glow, same as the artwork).
+   ========================================== */
+
+:root {
+    --maroon:      #6c1a2a;
+    --maroon-deep: #3c0d16;
+    --ink:         #2a1015;
+
+    --cream:       #ebf4df;
+    --cream-shade: #d7e2c4;
+    --parchment:   #e7ddc7;
+
+    --gold:        #ab9c44;
+    --gold-light:  #d8c878;
+
+    --gem:         #ba33f6;
+    --gem-glow:    rgba(186, 51, 246, 0.55);
+
+    --green:       #4caf50;
+    --green-dark:  #2e7d32;
+    --red:         #c73b3b;
+    --red-dark:    #8f2424;
+
+    --border-soft: rgba(42, 16, 21, 0.3);
+    --shadow-sm:   2px 2px 0 rgba(42, 16, 21, 0.25);
+    --shadow-md:   3px 3px 0 rgba(42, 16, 21, 0.3);
+}
+
 body {
-    font-family: sans-serif;
+    font-family: 'Courier New', ui-monospace, monospace;
     margin: 0;
     padding: 0;
 
-    background:
-        radial-gradient(circle at top left, #cfe3ff 0%, transparent 40%),
-        radial-gradient(circle at top right, #e0d1ff 0%, transparent 35%),
-        linear-gradient(180deg, #dfe8f7 0%, #d3def1 100%);
+    background: var(--parchment);
 
-    color: #2d3748;
+    color: var(--ink);
     min-height: 100vh;
 }
 
@@ -22,16 +52,14 @@ h1 {
     text-align: center;
     margin-bottom: 5px;
 
-    font-size: 36px;
+    font-size: 32px;
     font-weight: 800;
-    letter-spacing: -1px;
+    letter-spacing: 0.5px;
 
-    color: #5d4a2a;
-
-    text-shadow:
-        0 1px 0 rgba(255,255,255,0.7),
-        0 2px 6px rgba(0,0,0,0.08);
+    color: var(--maroon);
+    text-shadow: 2px 2px 0 var(--gold);
 }
+
 #game-banner {
     display: block;
 
@@ -44,6 +72,7 @@ h1 {
     user-select: none;
     pointer-events: none;
 }
+
 .top-bar {
     display: flex;
     justify-content: center;
@@ -58,28 +87,28 @@ h1 {
 }
 
 #mute-btn {
-    border: none;
-    border-radius: 8px;
-
+    border: 1px solid var(--maroon);
+    border-radius: 6px;
     padding: 8px 10px;
-
     cursor: pointer;
-
-    background: rgba(255,255,255,0.7);
-
+    background: var(--cream);
+    color: var(--ink);
     font-size: 18px;
+    box-shadow: var(--shadow-sm);
+}
 
-    box-shadow:
-        2px 2px 5px rgba(0,0,0,0.12),
-        -2px -2px 5px rgba(255,255,255,0.8);
+#mute-btn:active {
+    box-shadow: none;
+    transform: translate(1px, 1px);
 }
 
 .progress-container {
     position: relative;
     min-width: 120px;
     padding: 6px 10px;
-    border-radius: 8px;
-    background: #1f1f1f;
+    border: 1px solid var(--maroon);
+    border-radius: 6px;
+    background: var(--maroon-deep);
     overflow: hidden;
     display: inline-flex;
     align-items: center;
@@ -92,7 +121,7 @@ h1 {
     top: 0;
     height: 100%;
     width: 0%;
-    background: #4caf50;
+    background: var(--green);
     transition: width 0.2s ease;
     z-index: 0;
 }
@@ -101,7 +130,8 @@ h1 {
     position: relative;
     z-index: 1;
     font-size: 14px;
-    color: white;
+    font-weight: 700;
+    color: var(--cream);
     white-space: nowrap;
 }
 
@@ -111,8 +141,9 @@ h1 {
     align-items: center;
     justify-content: center;
 
-    font-size: 26px;
-    font-weight: 600;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--ink);
 
     margin-bottom: 20px;
 }
@@ -123,7 +154,7 @@ h1 {
     top: 20%;
     justify-content: center;
     transform: translate(-50%, -50%);
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
     pointer-events: none;
     opacity: 0;
@@ -131,14 +162,15 @@ h1 {
 }
 
 .floating-word.correct {
-    color: #2ecc71;
+    color: var(--green);
 }
 
 .floating-word.wrong {
-    color: #e74c3c;
+    color: var(--red);
 }
+
 .floating-word.found {
-    color: #ccb333;
+    color: var(--gold);
 }
 
 .floating-word.active.correct {
@@ -148,6 +180,7 @@ h1 {
 .floating-word.active.wrong {
     animation: fadeUp 250ms ease;
 }
+
 .floating-word.active.found {
     animation: fadeUp 250ms ease;
 }
@@ -171,9 +204,67 @@ h1 {
     justify-content: center;
 }
 
+/* ---- ornate frame: shared by the board, dialogs and the
+   player nameplate so they read as one family with the banner ---- */
+#board,
+.modal-card,
+#player-info {
+    position: relative;
+
+    border: 3px solid var(--maroon);
+    border-radius: 6px;
+
+    background-color: var(--cream);
+    background-image:
+        radial-gradient(circle, var(--gold) 42%, transparent 46%),
+        radial-gradient(circle, var(--gold) 42%, transparent 46%),
+        radial-gradient(circle, var(--gold) 42%, transparent 46%),
+        radial-gradient(circle, var(--gold) 42%, transparent 46%);
+    background-size: 8px 8px;
+    background-position:
+        3px 3px,
+        calc(100% - 3px) 3px,
+        3px calc(100% - 3px),
+        calc(100% - 3px) calc(100% - 3px);
+    background-repeat: no-repeat;
+}
+
+/* small glowing gem, top and bottom center, matching the banner */
+#board::before,
+#board::after,
+.modal-card::before,
+.modal-card::after,
+#player-info::before,
+#player-info::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    width: 7px;
+    height: 7px;
+    transform: translateX(-50%) rotate(45deg);
+    background: var(--gem);
+    box-shadow: 0 0 6px 1px var(--gem-glow);
+    border-radius: 1px;
+    pointer-events: none;
+}
+
+#board::before,
+.modal-card::before,
+#player-info::before {
+    top: -4px;
+}
+
+#board::after,
+.modal-card::after,
+#player-info::after {
+    bottom: -4px;
+}
+
 #board {
     display: grid;
     gap: 6px;
+    padding: 10px;
+    box-shadow: var(--shadow-md);
 }
 
 .cell {
@@ -185,7 +276,7 @@ h1 {
     justify-content: center;
 
     font-size: 22px;
-    font-weight: 600;
+    font-weight: 700;
 
     background-image: url("/assets/tiles4.png");
     background-size: 200% 200%;
@@ -194,7 +285,7 @@ h1 {
 
     image-rendering: pixelated;
 
-    border-radius: 1px;
+    border-radius: 4px;
 
     user-select: none;
     touch-action: none;
@@ -204,6 +295,7 @@ h1 {
     position: relative;
     animation: tileHue 15s linear infinite;
 }
+
 @keyframes tileHue {
     from {
         filter: hue-rotate(0deg);
@@ -221,26 +313,32 @@ h1 {
     font-size: 11px;
     font-weight: 700;
 
-    color: #666;
+    color: var(--ink);
+    background: var(--cream);
+    border-radius: 3px;
+    padding: 0 2px;
 
     pointer-events: none;
     user-select: none;
 }
 
 .cell:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
 .cell.selected {
     background-position: 0% 100%;
 }
+
 .cell.exhausted {
     background-position: 100% 0%;
     opacity: 1;
 }
+
 .cell.selected.exhausted {
     background-position: 100% 100%;
 }
+
 /* Mobile layout */
 @media (max-width: 768px) {
 
@@ -285,7 +383,6 @@ h1 {
     }
 }
 
-
 /* word list side */
 .right-panel {
     width: 260px;
@@ -306,23 +403,17 @@ h1 {
     gap: 8px;
 
     padding: 10px;
-    border-radius: 10px;
+    border: 1px solid var(--maroon);
+    border-radius: 8px;
 
-    background:
-        linear-gradient(
-            145deg,
-            #fff4c9,
-            #ffdca8
-        );
-    box-shadow:
-        2px 2px 6px rgba(0,0,0,0.1),
-        -2px -2px 5px rgba(255,255,255,0.7);
+    background: var(--cream);
+    box-shadow: var(--shadow-sm);
 }
 
 .word-group-title {
     font-size: 14px;
     font-weight: 700;
-    color: #333;
+    color: var(--maroon);
 }
 
 .word-group-words {
@@ -337,20 +428,15 @@ h1 {
 
     padding: 4px 8px;
 
-    border-radius: 6px;
+    border: 1px solid var(--border-soft);
+    border-radius: 5px;
 
-    background:
-        linear-gradient(
-            145deg,
-            #fffdf3,
-            #ffeecf
-        );
-    box-shadow:
-        2px 2px 4px rgba(0,0,0,0.2),
-        -1px -1px 3px rgba(255,255,255,0.8);
+    background: var(--cream-shade);
+    box-shadow: var(--shadow-sm);
 
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--ink);
 
     white-space: nowrap;
 }
@@ -359,12 +445,14 @@ h1 {
 #definition-tooltip {
     position: fixed;
     max-width: 320px;
-    background: #fff;
-    border-radius: 10px;
+    background: var(--cream);
+    border: 1px solid var(--maroon);
+    border-radius: 8px;
     padding: 10px 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: var(--shadow-md);
     font-size: 14px;
     line-height: 1.3;
+    color: var(--ink);
     z-index: 10000;
 
     opacity: 0;
@@ -397,8 +485,7 @@ h1 {
     justify-content: center;
     align-items: center;
 
-    background: rgba(0,0,0,.45);
-    backdrop-filter: blur(4px);
+    background: rgba(42, 16, 21, 0.55);
 
     z-index: 999999;
 }
@@ -407,30 +494,27 @@ h1 {
     display: none;
 }
 
+.hidden {
+    display: none !important;
+}
+
 .modal-card {
     width: min(420px, calc(100vw - 40px));
 
-    padding: 15px;
+    padding: 16px;
 
-    border-radius: 10px;
-
-    background: linear-gradient(
-        145deg,
-        #fff9df,
-        #ffe7b5
-    );
-
-    box-shadow: 0 20px 50px rgba(0,0,0,.3);
+    box-shadow: 4px 4px 0 rgba(42, 16, 21, 0.3);
 }
 
 .modal-card h2 {
     margin-top: 0;
     margin-bottom: 8px;
+    color: var(--maroon);
 }
 
 .modal-card p {
     margin-bottom: 18px;
-    color: #555;
+    color: var(--ink);
 }
 
 .modal-card input {
@@ -440,17 +524,20 @@ h1 {
     padding: 12px;
 
     font-size: 16px;
+    font-family: inherit;
 
-    border: none;
-    border-radius: 10px;
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
 
     outline: none;
 
-    background: white;
+    background: var(--cream);
+    color: var(--ink);
 }
 
 .modal-card input:focus {
-    box-shadow: 0 0 0 3px rgba(255,190,70,.35);
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
 }
 
 .modal-card button {
@@ -461,63 +548,108 @@ h1 {
     padding: 12px;
 
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
 
     font-size: 16px;
     font-weight: 700;
+    font-family: inherit;
 
     cursor: pointer;
 
-    background: linear-gradient(
-        145deg,
-        #9be7aa,
-        #73d68b
-    );
+    background: var(--maroon);
+    color: var(--cream);
 
+    box-shadow: var(--shadow-sm);
     transition: transform .1s;
 }
 
 .modal-card button:hover {
-    transform: translateY(-1px);
+    background: var(--maroon-deep);
 }
 
 .modal-card button:active {
-    transform: translateY(1px);
+    box-shadow: none;
+    transform: translate(1px, 1px);
 }
 
 .modal-error {
-    color: #c0392b;
+    color: var(--red-dark);
     font-size: 14px;
     margin-top: 10px;
     min-height: 18px;
 }
 
-
 .meta-bar {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-size: 14px;
-    color: #333;
+    color: var(--ink);
 }
+
 .meta-sep {
     opacity: 0.5;
 }
+
 #player-info {
-    font-weight: 600;
+    display: table;
+    position: relative;
+
+    margin: 10px auto 14px;
+    padding: 6px 14px;
+
+    color: var(--maroon);
+
+    font-weight: 700;
+    letter-spacing: .04em;
+
+    image-rendering: pixelated;
+}
+
+.player-info-container {
+    display: flex;
+    justify-content: center;
+}
+
+/* person icon takes ::before here, so only the bottom gem (::after,
+   inherited from the shared rule above) shows on this smaller nameplate */
+#player-info::before {
+    content: "👤 ";
+    position: static;
+    width: auto;
+    height: auto;
+    transform: none;
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+    opacity: .75;
+}
+
+#player-info::after {
+    width: 6px;
+    height: 6px;
+    bottom: -3px;
 }
 
 #leaderboard-btn {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 6px 10px;
+    border: 1px solid var(--maroon);
+    border-radius: 6px;
+    padding: 8px 10px;
+    background: var(--cream);
+    color: var(--ink);
+    font-size: 18px;
     cursor: pointer;
+    box-shadow: var(--shadow-sm);
 }
 
 #leaderboard-btn:hover {
-    background: #f2f2f2;
+    background: var(--gold-light);
+}
+
+#leaderboard-btn:active {
+    box-shadow: none;
+    transform: translate(1px, 1px);
 }
 
 .leaderboard-header {
@@ -529,23 +661,34 @@ h1 {
 .leaderboard-title {
     font-weight: 700;
     font-size: 18px;
+    color: var(--maroon);
 }
 
 #leaderboard-date {
     font-size: 18px;
     opacity: 0.7;
 }
+
 #leaderboard-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
     align-items: flex-start; /* prevents stretching */
 }
+
+#statistics-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start; /* prevents stretching */
+}
+
 #leaderboard-list .word-chip {
     display: inline-flex;
     width: auto;          /* stop full width */
     align-self: flex-start;
 }
+
 .leaderboard-controls {
     display: flex;
     align-items: center;
@@ -585,27 +728,30 @@ h1 {
 .leaderboard-tabs button {
     flex: 1;
 
-    padding: 0px 1px;
+    padding: 4px 1px;
     font-size: 14px;
     font-weight: 500;
+    font-family: inherit;
 
-    border: 1px solid #ddd;
+    border: 1px solid var(--maroon);
     border-radius: 6px;
-    background: #f5f5f5;
+    background: var(--cream);
+    color: var(--ink);
 
     cursor: pointer;
     transition: background-color 0.15s;
 }
 
 .leaderboard-tabs button:hover {
-    background: #e9e9e9;
+    background: var(--cream-shade);
 }
 
 .leaderboard-tabs button.active {
-    background: #4caf50;
-    color: white;
-    border-color: #4caf50;
+    background: var(--maroon);
+    color: var(--cream);
+    border-color: var(--maroon);
 }
+
 @keyframes victoryPop {
     0% {
         opacity: 0;

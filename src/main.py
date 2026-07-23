@@ -18,7 +18,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://squaredle-es.elandy.workers.dev",
-        "http://localhost:5500"
+        "http://localhost:5500",
+        "http://localhost:5173"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -155,20 +156,20 @@ async def get_progress(session_id: str):
     return progress
 
 # ==========================================================
-# LEADERBOARD
+# LEADERBOARD & STATISTICS
 # ==========================================================
 
 @app.get("/leaderboard/today")
 async def leaderboard_today():
-
     return service.get_today_leaderboard()
 
 @app.get("/leaderboard/{puzzle_id}")
 async def leaderboard(puzzle_id: str):
+    return service.get_leaderboard(puzzle_id=puzzle_id)
 
-    return service.get_leaderboard(
-        puzzle_id=puzzle_id
-    )
+@app.get("/player/{player_id}/statistics")
+async def player_statistics(player_id: str):
+    return service.get_player_statistics(player_id=player_id)
 
 # ==========================================================
 # RAE

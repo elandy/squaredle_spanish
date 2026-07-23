@@ -13,24 +13,25 @@
     <div class="top-bar">
         <img
             id="game-banner"
-            src="/assets/banner.png"
+            src="/assets/banner4.png"
             alt="Squaredle Español"
             draggable="false"
         />
     </div>
 
     <div class="meta-bar">
-        <div id="player-info">Anónimo</div>
-        <span class="meta-sep">•</span>
         <div id="progress" class="progress-container">
             <div class="progress-bar"></div>
             <div class="progress-text"></div>
         </div>
         <span class="meta-sep">•</span>
-        <button id="leaderboard-btn" title="Tabla de clasificación">🏆 Ranking</button>
+        <button id="leaderboard-btn" title="Ranking / Estadísticas">🏆 📊</button>
+        <span class="meta-sep">•</span>
         <button id="mute-btn">🔊</button>
     </div>
-
+    <div class="player-info-container">
+        <div id="player-info">Anónimo</div>
+    </div>
     <div id="current-word" translate="no"></div>
 
     <div class="game-layout">
@@ -71,26 +72,47 @@
 
 <div id="leaderboard-modal" class="modal hidden">
     <div class="modal-card">
+
         <div class="leaderboard-header">
             <div class="leaderboard-title">Ranking</div>
             <div id="leaderboard-date"></div>
         </div>
 
-        <div class="leaderboard-controls">
-            <div class="leaderboard-tabs">
-                <button id="tab-score" class="active">Puntaje</button>
-                <button id="tab-words">Palabras</button>
-            </div>
-
-            <label class="leaderboard-bonus-toggle">
-                <span>Incluir bonus</span>
-                <input id="leaderboard-bonus" type="checkbox">
-            </label>
+        <div class="leaderboard-tabs main-tabs">
+            <button id="main-tab-ranking" class="active">
+                🏆 Ranking
+            </button>
+            <button id="main-tab-stats">
+                📊 Estadísticas
+            </button>
         </div>
 
-        <div id="leaderboard-list"></div>
+        <div id="ranking-view">
+            <div class="leaderboard-controls">
+                <div class="leaderboard-tabs">
+                    <button id="tab-score" class="active">
+                        Puntaje
+                    </button>
+                    <button id="tab-words">
+                        Palabras
+                    </button>
+                </div>
+                <label class="leaderboard-bonus-toggle">
+                    <span>Incluir bonus</span>
+                    <input id="leaderboard-bonus" type="checkbox">
+                </label>
+            </div>
+            <div id="leaderboard-list"></div>
+        </div>
 
-        <button id="close-leaderboard">Cerrar</button>
+        <div id="statistics-view" class="hidden">
+            <div id="statistics-list"></div>
+        </div>
+
+        <button id="close-leaderboard">
+            Cerrar
+        </button>
+
     </div>
 </div>
 

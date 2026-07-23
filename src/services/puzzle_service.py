@@ -174,6 +174,8 @@ class PuzzleService:
             else:
                 session.score += score_added
                 session.found_count += 1
+                if session.found_count == puzzle["total_words"]:
+                    session.completed_at = datetime.now(UTC)
 
             try:
                 db.commit()
@@ -373,3 +375,84 @@ class PuzzleService:
             db.refresh(player)
 
             return player
+
+    @staticmethod
+    def get_player_statistics(player_id: str):
+        with SessionLocal() as db:
+            sessions = (
+                db.query(PlayerSession)
+                .join(Puzzle, Puzzle.id == PlayerSession.puzzle_id)
+                .filter(
+                    PlayerSession.player_id == player_id
+                )
+                .all()
+            )
+            if not sessions:
+                return {
+                    "played": 0,
+                    "completed": 0,
+                    "completion_rate": 0,
+                    "average_score": 0,
+                    "words_found": 0,
+                    "bonus_words_found": 0,
+                    "total_points": 0,
+                    "longest_streak": 0,
+                    "current_streak": 0,
+                }
+
+            played = len(sessions)
+            completed_sessions = [
+                s for s in sessions
+                if s.completed_at is not None
+            ]
+            completed = len(completed_sessions)
+            completion_rate = round(completed / played * 100, 1)
+            total_score = sum(s.score for s in sessions)
+            average_score = round(total_score / played, 1)
+            words_found = sum(s.found_count for s in sessions)
+            bonus_words_found = sum(s.bonus_found_count for s in sessions)
+
+            # newest first
+            sessions_by_date = sorted(
+                sessions,
+                key=lambda s: s.created_at.date(),
+                reverse=True
+            )
+
+            dates = [
+                s.created_at.date()
+                for s in sessions_by_date
+            ]
+
+            longest_streak = 0
+            current_streak = 0
+            if dates:
+                streak = 1
+                for i in range(1, len(dates)):
+                    diff = (dates[i-1] - dates[i]).days
+                    if diff == 1: streak += 1
+                    else:
+                        longest_streak = max(longest_streak, streak)
+                        streak = 1
+                longest_streak = max(longest_streak, streak)
+
+                # current streak
+                today = date.today()
+                if dates[0] == today or (today - dates[0]).days == 1:
+                    current_streak = 1
+                    for i in range(1, len(dates)):
+                        if (dates[i-1] - dates[i]).days == 1:
+                            current_streak += 1
+                        else: break
+
+            return {
+                "played": played,
+                "completed": completed,
+                "completion_rate": completion_rate,
+                "average_score": average_score,
+                "words_found": words_found,
+                "bonus_words_found": bonus_words_found,
+                "total_points": total_score,
+                "longest_streak": longest_streak,
+                "current_streak": current_streak,
+            }

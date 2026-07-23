@@ -4,7 +4,7 @@ import {
     Session,
     Progress,
     SubmitWordResponse,
-    LeaderboardData
+    LeaderboardData, PlayerStatistics
 } from "../types/api";
 
 const API_BASE = APP_CONFIG.API_BASE;
@@ -91,6 +91,16 @@ export async function createPlayer(sessionId: string, username: string) {
     if (!res.ok) {
         throw await res.json();
     }
+
+    return await res.json();
+}
+
+export async function getPlayerStatistics(
+    playerId: string
+): Promise<PlayerStatistics> {
+    const res = await fetch(
+        `${API_BASE}/player/${playerId}/statistics`
+    );
 
     return await res.json();
 }
