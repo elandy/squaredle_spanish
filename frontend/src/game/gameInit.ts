@@ -1,8 +1,8 @@
-import { getTodayPuzzle, createSession, getProgress } from "../services/api.js";
-import { renderBoard } from "./board.js";
-import { askUsername } from "./username.js";
-import { updateProgress } from "../ui/progressUI.js";
-import { renderFoundWords } from "../ui/foundWords.js";
+import { getTodayPuzzle, createSession, getProgress } from "../services/api";
+import { renderBoard } from "./board";
+import { askUsername } from "./username";
+import { updateProgress } from "../ui/progressUI";
+import { renderFoundWords } from "../ui/foundWords";
 import { setGameState } from "./state";
 import {Puzzle} from "../types/api";
 import {sha256} from "../utils/hash";

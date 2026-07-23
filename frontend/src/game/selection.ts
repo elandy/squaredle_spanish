@@ -1,5 +1,5 @@
-import { submitCurrentWord } from "./wordSubmission.js";
-import { playLetterSound } from "../audio/audio.js";
+import { submitCurrentWord } from "./wordSubmission";
+import { playLetterSound } from "../audio/audio";
 import { state } from "./state";
 
 export function updateCurrentWord() {

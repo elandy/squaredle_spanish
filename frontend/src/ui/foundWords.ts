@@ -1,4 +1,4 @@
-import { showTooltip } from "./tooltip.js";
+import { showTooltip } from "./tooltip";
 import { state } from "../game/state";
 import { WordGroup } from "../types/game";
 

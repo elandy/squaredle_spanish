@@ -71,17 +71,13 @@ export interface ApiError {
     detail: string;
 }
 
-export interface LeaderboardStats {
+export interface LeaderboardRow {
+    session_id: string;
+    username: string | null;
     found_words: number;
     bonus_found_words: number;
     score: number;
     bonus_score: number;
-}
-
-export interface LeaderboardRow {
-    session_id: string;
-    username: string | null;
-    stats: LeaderboardStats;
 }
 
 export interface Leaderboards {

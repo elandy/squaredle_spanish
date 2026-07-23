@@ -1,12 +1,13 @@
-import os
+import asyncio
 from datetime import datetime
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, StringConstraints
+
+from src.services.rae_service import get_definition
 from src.services.puzzle_service import PuzzleService
 from fastapi.middleware.cors import CORSMiddleware
-import httpx
 from fastapi import Query
 
 from src.utils.normalize import normalize
@@ -175,57 +176,4 @@ async def leaderboard(puzzle_id: str):
 
 @app.get("/dictionary/rae")
 async def rae_lookup(q: str = Query(..., min_length=1)):
-    url = f"https://rae-api.com/api/words/{q}"
-
-    headers = {
-        "accept": "application/json"
-    }
-
-    api_key = os.getenv("RAE_API_KEY")
-    if api_key:
-        headers["X-API-KEY"] = api_key
-
-    try:
-        async with httpx.AsyncClient(headers=headers, timeout=5.0) as client:
-            r = await client.get(url)
-
-        if r.status_code != 200:
-            return {
-                "word": q.upper(),
-                "definitions": ["La definición no fue encontrada."]
-            }
-
-        data = r.json()
-
-        definitions = []
-
-        for meaning in data.get("data", {}).get("meanings", []):
-            for sense in meaning.get("senses", []):
-                desc = sense.get("description")
-
-                if not desc:
-                    continue
-
-                if len(desc.split()) == 1 and any(c.isdigit() for c in desc):
-                    continue
-
-                definitions.append(desc)
-
-        if not definitions:
-            definitions = ["La definición no fue encontrada."]
-        else:
-            definitions = [
-                f"{i}. {definition}"
-                for i, definition in enumerate(definitions, start=1)
-            ]
-
-        return {
-            "word": q.upper(),
-            "definitions": definitions
-        }
-
-    except Exception:
-        return {
-            "word": q.upper(),
-            "definitions": ["La definición no fue encontrada."]
-        }
+    return await asyncio.to_thread(get_definition, q)

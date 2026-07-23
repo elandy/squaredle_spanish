@@ -1,4 +1,4 @@
-import {LeaderboardData, LeaderboardKey, LeaderboardRow} from "../types/api.ts";
+import {LeaderboardData, LeaderboardKey, LeaderboardRow} from "../types/api";
 
 let leaderboardData: LeaderboardData | null = null;
 
@@ -20,16 +20,14 @@ function renderLeaderboard() {
             : (includeBonus ? "words_bonus" : "words");
 
     leaderboardData.leaderboards[key].forEach((row: LeaderboardRow, i: number) => {
-        const stats = row.stats;
-
         const value =
             leaderboardMetric === "score"
                 ? (includeBonus
-                    ? stats.score + stats.bonus_score
-                    : stats.score)
+                    ? row.score + row.bonus_score
+                    : row.score)
                 : (includeBonus
-                    ? stats.found_words + stats.bonus_found_words
-                    : stats.found_words);
+                    ? row.found_words + row.bonus_found_words
+                    : row.found_words);
 
         const suffix =
             leaderboardMetric === "score"

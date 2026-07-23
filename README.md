@@ -516,7 +516,6 @@ A page that shows something like:
 
 ### Performance and other improvements
 
-* Cache word definitions to minimize API calls (can be done in memory since the daily dictionary is small)
 * Obtain a proper domain name (maybe squaredle.ar)
 * Ranking cache (invalidate with submit)
 * BG music

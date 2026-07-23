@@ -1,4 +1,5 @@
 from datetime import datetime, date, UTC
+from functools import partial
 
 from sqlalchemy import String, Date, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
@@ -8,6 +9,8 @@ from sqlalchemy import UniqueConstraint
 from sqlalchemy.sql.schema import Index, ForeignKey
 
 from src.db.database import Base
+
+utcnow = partial(datetime.now, UTC)
 
 
 class Puzzle(Base):
@@ -26,8 +29,8 @@ class PlayerSession(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
     puzzle_id: Mapped[str] = mapped_column(ForeignKey("puzzles.id"), index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
-    last_seen: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    last_seen: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     found_words = relationship("FoundWord", back_populates="session", cascade="all, delete-orphan")
 
@@ -44,7 +47,7 @@ class Player(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
     username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     sessions: Mapped[list["PlayerSession"]] = relationship(back_populates="player")
 
